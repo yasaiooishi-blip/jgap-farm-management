@@ -1,73 +1,274 @@
-# React + TypeScript + Vite
+# JGAP農場管理システム
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+JGAP（日本農業規範）認証取得のための作業記録・圃場管理を効率的に行えるWebアプリケーション
 
-Currently, two official plugins are available:
+## 📋 現在の完成機能
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### ✅ 1. ユーザー認証
+- メール/パスワードでの新規登録
+- ログイン/ログアウト機能
+- 認証状態の保持
 
-## React Compiler
+### ✅ 2. ダッシュボード
+- 今日の日付表示
+- 統計情報表示（圃場数、栽培中の圃場、総面積、今月の記録数）
+- クイックアクションボタン
+- 最近の作業記録（最大5件）
+- 圃場概要カード
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### ✅ 3. 作業記録入力
+- 作業日選択（日付ピッカー）
+- 圃場選択（ドロップダウン）
+- 作業種別選択（8種類）
+  - 施肥、除草、収穫、農薬散布、播種、定植、整地、その他
+- 作業内容詳細入力
+- 作業者名入力
+- バリデーション機能
 
-## Expanding the ESLint configuration
+### ✅ 4. 圃場管理
+- 圃場一覧表示（テーブル形式）
+- 圃場情報：名称、面積、作物、状態
+- 新規圃場追加機能
+- 圃場情報編集機能
+- 圃場削除機能
+- 状態管理（栽培中、休耕、準備中）
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### ✅ 5. 作業記録一覧
+- テーブル表示（日付、圃場、作物、作業種別、作業者、作業内容）
+- 日付降順ソート
+- 高度なフィルタリング機能
+  - 日付範囲指定（開始日〜終了日）
+  - 圃場別フィルター
+  - 作業種別フィルター
+- フィルタークリア機能
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### ✅ 6. ナビゲーション
+- PCサイドバーナビゲーション
+- モバイルハンバーガーメニュー
+- レスポンシブデザイン対応
+- ユーザー情報表示
+- ログアウト機能
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### ✅ 7. 設定画面
+- アカウント情報表示
+- Firebase設定ガイド
+- Firestoreセキュリティルール例
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 🎯 機能別URIパス
+
+### 認証関連
+- `/login` - ログインページ
+- `/signup` - 新規登録ページ
+
+### メイン機能（認証必須）
+- `/dashboard` - ダッシュボード（統計情報、最近の記録、クイックアクション）
+- `/fields` - 圃場管理（一覧、追加、編集、削除）
+- `/work-records` - 作業記録一覧（検索、フィルタリング）
+- `/add-work-record` - 作業記録追加
+- `/settings` - 設定（アカウント情報、Firebase設定ガイド）
+
+### リダイレクト
+- `/` - `/dashboard`にリダイレクト
+
+## 📊 データモデル
+
+### Firestore Collections
+
+#### fields（圃場）
+```typescript
+{
+  id: string;
+  userId: string;
+  name: string;        // 圃場名
+  area: number;        // 面積（ha）
+  crop: string;        // 栽培作物
+  status: '栽培中' | '休耕' | '準備中';
+  createdAt: Timestamp;
+}
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+#### workRecords（作業記録）
+```typescript
+{
+  id: string;
+  userId: string;
+  date: string;        // YYYY-MM-DD形式
+  fieldId: string;
+  fieldName: string;
+  crop: string;
+  workType: '施肥' | '除草' | '収穫' | '農薬散布' | '播種' | '定植' | '整地' | 'その他';
+  workDetail: string;
+  worker: string;
+  createdAt: Timestamp;
+}
 ```
+
+## 🚧 未実装機能
+
+- 天気情報API連携
+- 作業記録の編集・削除機能
+- データエクスポート機能（CSV、PDF）
+- 画像アップロード機能
+- プッシュ通知機能
+- データ分析・グラフ表示
+- 多言語対応
+
+## 💡 推奨される次のステップ
+
+1. **Firebase設定の完了**
+   - Firebase Consoleでプロジェクトを作成
+   - Authentication、Firestoreを有効化
+   - 環境変数の設定
+
+2. **作業記録の編集・削除機能の追加**
+   - 既存の作業記録を編集できる機能
+   - 不要な記録を削除できる機能
+
+3. **データエクスポート機能**
+   - 作業記録をCSV形式でダウンロード
+   - JGAP監査用のPDFレポート生成
+
+4. **写真アップロード機能**
+   - 作業記録に写真を添付
+   - Firebase Storageを使用
+
+5. **データ分析機能**
+   - 作業頻度の可視化
+   - 圃場ごとの作業統計
+   - グラフ・チャート表示
+
+## 🛠️ 技術スタック
+
+- **フロントエンド**
+  - React 19.2.0
+  - TypeScript 5.9.3
+  - TailwindCSS 4.1.18
+  - Vite 7.2.4
+  - React Router 7.13.0
+
+- **バックエンド**
+  - Firebase Authentication
+  - Firestore Database
+
+- **UI/UX**
+  - Material Icons
+  - Google Fonts (Noto Sans JP)
+  - レスポンシブデザイン
+
+## 📦 セットアップ
+
+### 依存関係のインストール
+```bash
+npm install
+```
+
+### Firebase設定
+1. Firebase Consoleでプロジェクトを作成: https://console.firebase.google.com/
+2. Authentication > Sign-in method でメール/パスワードを有効化
+3. Firestore Database を作成（テストモードで開始）
+4. プロジェクト設定から設定値を取得
+5. `src/config/firebase.ts` の設定値を更新、または `.env.local` に以下を記入:
+
+```env
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+```
+
+### Firestoreセキュリティルールの設定
+Firebase Console > Firestore Database > ルール で以下を設定:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    match /fields/{fieldId} {
+      allow read, write: if isOwner(resource.data.userId);
+      allow create: if isSignedIn() && 
+        request.resource.data.userId == request.auth.uid;
+    }
+    
+    match /workRecords/{recordId} {
+      allow read, write: if isOwner(resource.data.userId);
+      allow create: if isSignedIn() && 
+        request.resource.data.userId == request.auth.uid;
+    }
+  }
+}
+```
+
+### 開発サーバーの起動
+```bash
+npm run dev:sandbox
+```
+
+ブラウザで `http://localhost:3000` を開く
+
+### ビルド
+```bash
+npm run build
+```
+
+### プレビュー
+```bash
+npm run preview
+```
+
+## 🚀 デプロイ
+
+### Firebase Hosting
+```bash
+# Firebase CLIのインストール
+npm install -g firebase-tools
+
+# Firebaseにログイン
+firebase login
+
+# Firebaseプロジェクトの初期化
+firebase init hosting
+
+# デプロイ
+npm run build
+firebase deploy
+```
+
+### Vercel、Netlifyなど
+各プラットフォームの指示に従ってください。
+
+## 📱 レスポンシブデザイン
+
+- **モバイル** (〜768px): ハンバーガーメニュー、縦並びレイアウト
+- **タブレット・PC** (768px〜): サイドバーナビゲーション、グリッドレイアウト
+
+## 🎨 デザイン
+
+- **プライマリカラー**: #4CAF50（グリーン）
+- **背景色**: #FFFFFF（ホワイト）
+- **フォント**: Noto Sans JP
+
+## 📄 ライセンス
+
+MIT License
+
+## 🤝 貢献
+
+プルリクエストを歓迎します。大きな変更の場合は、まずissueを開いて変更内容を議論してください。
+
+## 📞 サポート
+
+質問や問題がある場合は、GitHubのIssuesで報告してください。
+
+---
+
+**JGAP農場管理システム** - 持続可能な農業経営のために 🌾
