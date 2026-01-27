@@ -7,7 +7,7 @@ import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Select from '../components/common/Select';
-import { Field } from '../types';
+import type { Field } from '../types';
 
 export default function Fields() {
   const { currentUser } = useAuth();

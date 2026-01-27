@@ -8,7 +8,7 @@ import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Select from '../components/common/Select';
-import { WorkRecord, Field } from '../types';
+import type { WorkRecord, Field } from '../types';
 
 export default function WorkRecords() {
   const { currentUser } = useAuth();

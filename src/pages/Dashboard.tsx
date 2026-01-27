@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/layout/Layout';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
-import { WorkRecord, Field } from '../types';
+import type { WorkRecord, Field } from '../types';
 
 export default function Dashboard() {
   const { currentUser } = useAuth();
