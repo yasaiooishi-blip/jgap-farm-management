@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
-import { db } from '../../config/firebase';
+import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import Card from '../common/Card';
 import Button from '../common/Button';

@@ -3,7 +3,6 @@ import { AuthProvider } from './contexts/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import Dashboard from './pages/Dashboard';
 import DashboardNew from './pages/DashboardNew';
 import Fields from './pages/Fields';
 import WorkRecords from './pages/WorkRecords';

@@ -10,7 +10,7 @@ interface WeatherData {
 }
 
 export default function WeatherWidget() {
-  const [weather, setWeather] = useState<WeatherData>({
+  const [weather] = useState<WeatherData>({
     temperature: 22,
     condition: '晴れ',
     humidity: 65,
