@@ -4,7 +4,7 @@
 
 // デバッグ用: 直接値を設定（一時的）
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyACN-g79jLRXuV7w4eHS_PYjOrm8zhL6o4",
+  apiKey: "AIzaSyACN-g79jLRXuV7w4eHS_PYjQrm8zhlo64",
   authDomain: "jgap-farm-system.firebaseapp.com",
   projectId: "jgap-farm-system",
   storageBucket: "jgap-farm-system.firebasestorage.app",
