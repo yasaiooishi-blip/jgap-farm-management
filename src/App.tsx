@@ -7,6 +7,8 @@ import DashboardNew from './pages/DashboardNew';
 import Fields from './pages/Fields';
 import WorkRecords from './pages/WorkRecords';
 import AddWorkRecord from './pages/AddWorkRecord';
+import Materials from './pages/Materials';
+import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 
 function App() {
@@ -58,6 +60,24 @@ function App() {
             element={
               <PrivateRoute>
                 <Settings />
+              </PrivateRoute>
+            }
+          />
+          
+          <Route
+            path="/materials"
+            element={
+              <PrivateRoute>
+                <Materials />
+              </PrivateRoute>
+            }
+          />
+          
+          <Route
+            path="/reports"
+            element={
+              <PrivateRoute>
+                <Reports />
               </PrivateRoute>
             }
           />
