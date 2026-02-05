@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Card from '../components/common/Card';
+import FirebaseSetupGuide from '../components/common/FirebaseSetupGuide';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -13,6 +14,10 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  
+  // Firebase設定チェック
+  const isFirebaseConfigured = import.meta.env.VITE_FIREBASE_API_KEY && 
+    import.meta.env.VITE_FIREBASE_API_KEY !== 'demo-api-key';
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -34,8 +39,12 @@ export default function Login() {
         setError('このメールアドレスは登録されていません');
       } else if (error.code === 'auth/wrong-password') {
         setError('パスワードが正しくありません');
+      } else if (error.code === 'auth/invalid-api-key') {
+        setError('⚠️ Firebase設定が必要です。SETUP.mdを参照してください。');
+      } else if (error.message?.includes('demo-api-key')) {
+        setError('⚠️ デモモードです。実際の認証にはFirebase設定が必要です。');
       } else {
-        setError('ログインに失敗しました。もう一度お試しください');
+        setError(`ログインに失敗しました: ${error.message || 'もう一度お試しください'}`);
       }
     } finally {
       setLoading(false);
@@ -55,6 +64,8 @@ export default function Login() {
 
         <Card>
           <h2 className="text-2xl font-bold text-center mb-6">ログイン</h2>
+          
+          {!isFirebaseConfigured && <FirebaseSetupGuide />}
           
           {error && (
             <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center">
