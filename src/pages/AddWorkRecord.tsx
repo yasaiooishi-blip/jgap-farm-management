@@ -44,9 +44,14 @@ export default function AddWorkRecord() {
         ...doc.data()
       })) as Field[];
       setFields(fieldsData);
-    } catch (error) {
+    } catch (error: any) {
       console.error('圃場の読み込みエラー:', error);
-      setError('圃場データの読み込みに失敗しました');
+      // Firestoreインデックスエラーの場合は特別なメッセージを表示
+      if (error?.message?.includes('index')) {
+        setError('データベースの準備中です。しばらくしてから再度お試しください。');
+      } else {
+        setError('圃場データの読み込みに失敗しました: ' + (error?.message || '不明なエラー'));
+      }
     }
   }
 

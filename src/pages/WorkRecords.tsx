@@ -16,6 +16,7 @@ export default function WorkRecords() {
   const [workRecords, setWorkRecords] = useState<WorkRecord[]>([]);
   const [fields, setFields] = useState<Field[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [filters, setFilters] = useState({
     startDate: '',
     endDate: '',
@@ -31,6 +32,7 @@ export default function WorkRecords() {
 
   async function loadData() {
     try {
+      setError('');
       // 圃場を読み込み
       const fieldsQuery = query(
         collection(db, 'fields'),
@@ -56,8 +58,14 @@ export default function WorkRecords() {
         createdAt: doc.data().createdAt?.toDate()
       })) as WorkRecord[];
       setWorkRecords(recordsData);
-    } catch (error) {
+    } catch (error: any) {
       console.error('データの読み込みエラー:', error);
+      // Firestoreインデックスエラーの場合
+      if (error?.message?.includes('index')) {
+        setError('データベースのインデックスを作成中です。Firebase Consoleでインデックスを作成してください。');
+      } else {
+        setError('データの読み込みに失敗しました: ' + (error?.message || '不明なエラー'));
+      }
     } finally {
       setLoading(false);
     }
@@ -93,6 +101,16 @@ export default function WorkRecords() {
             新規作業記録
           </Button>
         </div>
+
+        {error && (
+          <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center">
+            <span className="material-icons mr-2">error</span>
+            <div>
+              <p className="font-semibold">エラー</p>
+              <p className="text-sm">{error}</p>
+            </div>
+          </div>
+        )}
 
         <Card title="検索・フィルター">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
