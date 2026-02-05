@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, browserLocalPersistence, setPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { firebaseConfig } from '../config/firebase';
 
@@ -9,5 +9,10 @@ const app = initializeApp(firebaseConfig);
 // サービスのエクスポート
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// 認証の永続化設定（ブラウザを閉じてもログイン状態を保持）
+setPersistence(auth, browserLocalPersistence).catch((error) => {
+  console.error('認証の永続化設定エラー:', error);
+});
 
 export default app;
