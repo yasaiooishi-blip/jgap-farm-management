@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, addDoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, getDocs, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/layout/Layout';
@@ -34,24 +34,18 @@ export default function AddWorkRecord() {
 
   async function loadFields() {
     try {
-      const q = query(
-        collection(db, 'fields'),
-        where('userId', '==', currentUser?.uid)
-      );
-      const querySnapshot = await getDocs(q);
-      const fieldsData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Field[];
+      // シンプルなクエリ：すべての圃場を取得してクライアント側でフィルタ
+      const querySnapshot = await getDocs(collection(db, 'fields'));
+      const fieldsData = querySnapshot.docs
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        .filter(field => field.userId === currentUser?.uid) as Field[];
       setFields(fieldsData);
     } catch (error: any) {
       console.error('圃場の読み込みエラー:', error);
-      // Firestoreインデックスエラーの場合は特別なメッセージを表示
-      if (error?.message?.includes('index')) {
-        setError('データベースの準備中です。しばらくしてから再度お試しください。');
-      } else {
-        setError('圃場データの読み込みに失敗しました: ' + (error?.message || '不明なエラー'));
-      }
+      setError('圃場データの読み込みに失敗しました: ' + (error?.message || '不明なエラー'));
     }
   }
 
@@ -183,7 +177,7 @@ export default function AddWorkRecord() {
                 <Button
                   type="button"
                   variant="secondary"
-                  onClick={() => navigate('/work-records')}
+                  onClick={() => navigate('/dashboard')}
                 >
                   キャンセル
                 </Button>
