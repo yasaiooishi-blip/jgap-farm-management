@@ -45,11 +45,10 @@ export default function WorkRecords() {
       })) as Field[];
       setFields(fieldsData);
 
-      // 作業記録を読み込み
+      // 作業記録を読み込み（orderByを削除してインデックス不要に）
       const recordsQuery = query(
         collection(db, 'workRecords'),
-        where('userId', '==', currentUser?.uid),
-        orderBy('date', 'desc')
+        where('userId', '==', currentUser?.uid)
       );
       const recordsSnapshot = await getDocs(recordsQuery);
       const recordsData = recordsSnapshot.docs.map(doc => ({
@@ -57,6 +56,8 @@ export default function WorkRecords() {
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate()
       })) as WorkRecord[];
+      // クライアント側で日付順にソート
+      recordsData.sort((a, b) => (b.date > a.date ? 1 : -1));
       setWorkRecords(recordsData);
     } catch (error: any) {
       console.error('データの読み込みエラー:', error);
