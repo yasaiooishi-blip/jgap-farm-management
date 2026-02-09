@@ -150,6 +150,41 @@ export default function Reports() {
       .sort((a, b) => a.month.localeCompare(b.month));
   };
 
+  // 各資材ごとの使用量集計
+  const getUsageByMaterial = () => {
+    const materialData: { [key: string]: { name: string; type: string; totalQuantity: number; count: number; unit: string } } = {};
+    
+    materialUsages.forEach(usage => {
+      if (!materialData[usage.materialName]) {
+        materialData[usage.materialName] = {
+          name: usage.materialName,
+          type: usage.materialType,
+          totalQuantity: 0,
+          count: 0,
+          unit: usage.unit
+        };
+      }
+      materialData[usage.materialName].totalQuantity += usage.quantity;
+      materialData[usage.materialName].count += 1;
+    });
+
+    return Object.values(materialData).sort((a, b) => b.totalQuantity - a.totalQuantity);
+  };
+
+  // 各資材の使用量（グラフ用）
+  const getMaterialUsageChart = () => {
+    const materialData: { [key: string]: number } = {};
+    
+    materialUsages.forEach(usage => {
+      materialData[usage.materialName] = (materialData[usage.materialName] || 0) + usage.quantity;
+    });
+
+    return Object.entries(materialData)
+      .map(([name, quantity]) => ({ name, quantity }))
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 10); // 上位10件
+  };
+
   const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
   // CSV出力
@@ -465,6 +500,74 @@ export default function Reports() {
                     <Line type="monotone" dataKey="農薬" stroke="#ef4444" name="農薬 (kg)" />
                   </LineChart>
                 </ResponsiveContainer>
+              )}
+            </Card>
+
+            <Card>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">各資材の使用量（上位10件）</h3>
+              {materialUsages.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">データがありません</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={getMaterialUsageChart()}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="quantity" fill="#8b5cf6" name="使用量" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </Card>
+
+            <Card>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">各資材ごとの使用量集計</h3>
+              {materialUsages.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">データがありません</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          資材名
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          種別
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          総使用量
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          使用回数
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {getUsageByMaterial().map((item, index) => (
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {item.name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 text-xs rounded ${
+                              item.type === '肥料' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.type}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {item.totalQuantity.toFixed(1)} {item.unit}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {item.count} 回
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </Card>
 
