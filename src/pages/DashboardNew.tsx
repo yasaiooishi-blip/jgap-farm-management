@@ -103,20 +103,20 @@ export default function DashboardNew() {
       path: '/add-work-record'
     },
     {
-      icon: 'description',
-      label: '農薬・肥料使用簿',
-      description: '使用記録を管理',
-      color: 'bg-purple-500',
-      hoverColor: 'hover:bg-purple-600',
-      path: '/material-usage'
-    },
-    {
       icon: 'terrain',
       label: '圃場管理',
       description: '圃場情報を管理',
       color: 'bg-blue-500',
       hoverColor: 'hover:bg-blue-600',
       path: '/fields'
+    },
+    {
+      icon: 'inventory_2',
+      label: '資材管理',
+      description: '資材・在庫を管理',
+      color: 'bg-purple-500',
+      hoverColor: 'hover:bg-purple-600',
+      path: '/materials'
     },
     {
       icon: 'assessment',

@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, getDocs, serverTimestamp, query, where, doc, updateDoc, increment } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/layout/Layout';
 import Card from '../components/common/Card';
@@ -39,6 +40,8 @@ export default function AddWorkRecord() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
@@ -105,6 +108,63 @@ export default function AddWorkRecord() {
     return [];
   };
 
+  // ファイル選択ハンドラー
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const files = Array.from(e.target.files);
+      // 写真と動画のみを許可
+      const validFiles = files.filter(file => 
+        file.type.startsWith('image/') || file.type.startsWith('video/')
+      );
+      
+      if (validFiles.length !== files.length) {
+        setError('写真または動画のみアップロードできます');
+        return;
+      }
+      
+      // 最大5ファイルまで
+      if (uploadedFiles.length + validFiles.length > 5) {
+        setError('最大5つまでファイルをアップロードできます');
+        return;
+      }
+      
+      setUploadedFiles(prev => [...prev, ...validFiles]);
+      setError('');
+    }
+  };
+
+  // ファイル削除ハンドラー
+  const handleRemoveFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // ファイルをFirebase Storageにアップロード
+  const uploadFiles = async (): Promise<string[]> => {
+    if (uploadedFiles.length === 0) return [];
+    
+    setUploading(true);
+    const urls: string[] = [];
+    
+    try {
+      for (const file of uploadedFiles) {
+        const timestamp = Date.now();
+        const fileName = `work-records/${currentUser?.uid}/${timestamp}_${file.name}`;
+        const storageRef = ref(storage, fileName);
+        
+        await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(storageRef);
+        urls.push(url);
+      }
+    } catch (error) {
+      console.error('ファイルアップロードエラー:', error);
+      throw new Error('ファイルのアップロードに失敗しました');
+    } finally {
+      setUploading(false);
+    }
+    
+    return urls;
+  };
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
@@ -143,6 +203,9 @@ export default function AddWorkRecord() {
     try {
       setLoading(true);
 
+      // ファイルをアップロード
+      const fileUrls = await uploadFiles();
+
       // 作業記録を追加
       await addDoc(collection(db, 'workRecords'), {
         userId: currentUser?.uid,
@@ -153,6 +216,7 @@ export default function AddWorkRecord() {
         workType: formData.workType,
         workDetail: formData.workDetail,
         worker: formData.worker,
+        mediaUrls: fileUrls, // 写真・動画のURL
         createdAt: serverTimestamp()
       });
 
@@ -349,13 +413,67 @@ export default function AddWorkRecord() {
             placeholder="例: 田中太郎"
           />
 
+          {/* 写真・動画のアップロード */}
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+            <div className="flex items-center mb-4">
+              <span className="material-icons text-blue-600 mr-2">photo_camera</span>
+              <h3 className="font-semibold text-gray-900">写真・動画を追加（任意）</h3>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="cursor-pointer">
+                  <div className="flex items-center justify-center bg-blue-50 border-2 border-blue-300 border-dashed rounded-lg p-4 hover:bg-blue-100 transition">
+                    <span className="material-icons text-blue-600 mr-2">add_photo_alternate</span>
+                    <span className="text-blue-600 font-medium">ファイルを選択</span>
+                  </div>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*,video/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </label>
+                <p className="text-xs text-gray-500 mt-2">
+                  写真または動画（最大5ファイル）
+                </p>
+              </div>
+
+              {/* アップロードされたファイルのプレビュー */}
+              {uploadedFiles.length > 0 && (
+                <div className="grid grid-cols-2 gap-2">
+                  {uploadedFiles.map((file, index) => (
+                    <div key={index} className="relative bg-gray-100 rounded p-2">
+                      <div className="flex items-center space-x-2">
+                        <span className="material-icons text-gray-600 text-sm">
+                          {file.type.startsWith('image/') ? 'image' : 'videocam'}
+                        </span>
+                        <span className="text-sm text-gray-700 truncate flex-1">
+                          {file.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFile(index)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <span className="material-icons text-sm">close</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="flex space-x-3 pt-4">
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || uploading}
               className="flex-1"
             >
-              {loading ? '保存中...' : '保存'}
+              {loading || uploading ? '保存中...' : '保存'}
             </Button>
             <Button
               type="button"

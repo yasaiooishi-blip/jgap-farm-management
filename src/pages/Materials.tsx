@@ -16,6 +16,7 @@ interface Material {
   unit: string;
   minimumStock: number;
   supplier: string;
+  storageLocation: string; // 保管場所
   lastPurchaseDate: string;
   costPerUnit: number;
   notes: string;
@@ -36,6 +37,7 @@ export default function Materials() {
     unit: 'kg',
     minimumStock: '',
     supplier: '',
+    storageLocation: '', // 保管場所
     lastPurchaseDate: new Date().toISOString().split('T')[0],
     costPerUnit: '',
     notes: ''
@@ -74,7 +76,7 @@ export default function Materials() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.quantity || !formData.minimumStock || !formData.supplier || !formData.costPerUnit) {
+    if (!formData.name || !formData.quantity || !formData.minimumStock || !formData.supplier || !formData.storageLocation || !formData.costPerUnit) {
       setError('すべての必須項目を入力してください');
       return;
     }
@@ -91,6 +93,7 @@ export default function Materials() {
         unit: formData.unit,
         minimumStock: Number(formData.minimumStock),
         supplier: formData.supplier,
+        storageLocation: formData.storageLocation,
         lastPurchaseDate: formData.lastPurchaseDate,
         costPerUnit: Number(formData.costPerUnit),
         notes: formData.notes,
@@ -105,6 +108,7 @@ export default function Materials() {
         unit: 'kg',
         minimumStock: '',
         supplier: '',
+        storageLocation: '',
         lastPurchaseDate: new Date().toISOString().split('T')[0],
         costPerUnit: '',
         notes: ''
@@ -242,6 +246,9 @@ export default function Materials() {
                       状態
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      保管場所
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       仕入先
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -280,6 +287,9 @@ export default function Materials() {
                           <span className={`px-2 py-1 text-xs rounded border ${status.color}`}>
                             {status.label}
                           </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {material.storageLocation || '未設定'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {material.supplier}
@@ -384,6 +394,14 @@ export default function Materials() {
                     value={formData.supplier}
                     onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
                     placeholder="例: ○○農業資材店"
+                  />
+
+                  <Input
+                    label="保管場所"
+                    required
+                    value={formData.storageLocation}
+                    onChange={(e) => setFormData({ ...formData, storageLocation: e.target.value })}
+                    placeholder="例: 倉庫A、冷蔵庫、資材室など"
                   />
 
                   <Input
