@@ -137,7 +137,7 @@ export default function TodayTasks() {
         <Button
           variant="secondary"
           size="sm"
-          onClick={() => navigate('/work-records/add')}
+          onClick={() => navigate('/add-work-record')}
           className="flex items-center space-x-1"
         >
           <span className="material-icons text-sm">add</span>
@@ -152,7 +152,7 @@ export default function TodayTasks() {
           <Button
             variant="primary"
             size="sm"
-            onClick={() => navigate('/work-records/add')}
+            onClick={() => navigate('/add-work-record')}
             className="mt-4"
           >
             作業を追加

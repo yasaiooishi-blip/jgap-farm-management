@@ -100,7 +100,7 @@ export default function DashboardNew() {
       description: '新しい作業を記録',
       color: 'bg-green-500',
       hoverColor: 'hover:bg-green-600',
-      path: '/work-records/add'
+      path: '/add-work-record'
     },
     {
       icon: 'terrain',
