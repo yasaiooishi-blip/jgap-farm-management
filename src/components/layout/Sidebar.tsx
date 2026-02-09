@@ -9,6 +9,7 @@ export default function Sidebar() {
     { path: '/dashboard', label: 'ダッシュボード', icon: 'dashboard' },
     { path: '/work-records', label: '作業記録', icon: 'assignment' },
     { path: '/fields', label: '圃場管理', icon: 'landscape' },
+    { path: '/material-usage', label: '農薬・肥料使用簿', icon: 'description' },
     { path: '/settings', label: '設定', icon: 'settings' },
   ];
 

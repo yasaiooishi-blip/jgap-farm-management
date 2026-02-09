@@ -8,6 +8,7 @@ import Fields from './pages/Fields';
 import WorkRecords from './pages/WorkRecords';
 import AddWorkRecord from './pages/AddWorkRecord';
 import Materials from './pages/Materials';
+import MaterialUsage from './pages/MaterialUsage';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 
@@ -69,6 +70,15 @@ function App() {
             element={
               <PrivateRoute>
                 <Materials />
+              </PrivateRoute>
+            }
+          />
+          
+          <Route
+            path="/material-usage"
+            element={
+              <PrivateRoute>
+                <MaterialUsage />
               </PrivateRoute>
             }
           />
