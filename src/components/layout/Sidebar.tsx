@@ -11,6 +11,7 @@ export default function Sidebar() {
     { path: '/fields', label: '圃場管理', icon: 'landscape' },
     { path: '/materials', label: '資材管理', icon: 'inventory_2' },
     { path: '/material-usage', label: '農薬・肥料使用簿', icon: 'description' },
+    { path: '/reports', label: 'レポート', icon: 'assessment' },
     { path: '/settings', label: '設定', icon: 'settings' },
   ];
 
