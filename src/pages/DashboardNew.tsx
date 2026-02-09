@@ -49,32 +49,35 @@ export default function DashboardNew() {
       );
       const workRecordsSnapshot = await getDocs(workRecordsQuery);
 
-      // 今日の予定タスク数を取得
+      // 今日の予定タスク数を取得（クライアント側でフィルタリング）
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const tasksQuery = query(
-        collection(db, 'workRecords'),
-        where('userId', '==', currentUser.uid),
-        where('date', '>=', today.toISOString()),
-        where('status', '==', 'pending')
-      );
-      const tasksSnapshot = await getDocs(tasksQuery);
+      const todayISOString = today.toISOString();
+      
+      // 全ての作業記録を取得してクライアント側でフィルタ
+      const allWorkRecords = workRecordsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      const pendingTasksCount = allWorkRecords.filter(record => 
+        record.date >= todayISOString && record.status === 'pending'
+      ).length;
 
-      // 最近の活動（7日以内）
+      // 最近の活動（7日以内）をクライアント側でフィルタ
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
-      const recentQuery = query(
-        collection(db, 'workRecords'),
-        where('userId', '==', currentUser.uid),
-        where('date', '>=', weekAgo.toISOString())
-      );
-      const recentSnapshot = await getDocs(recentQuery);
+      const weekAgoISOString = weekAgo.toISOString();
+      
+      const recentActivitiesCount = allWorkRecords.filter(record =>
+        record.date >= weekAgoISOString
+      ).length;
 
       setStats({
         totalFields: fieldsSnapshot.size,
         totalWorkRecords: workRecordsSnapshot.size,
-        pendingTasks: tasksSnapshot.size,
-        recentActivities: recentSnapshot.size
+        pendingTasks: pendingTasksCount,
+        recentActivities: recentActivitiesCount
       });
     } catch (error) {
       console.error('ダッシュボードデータ読み込みエラー:', error);

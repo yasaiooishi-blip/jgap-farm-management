@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import Card from '../common/Card';
@@ -31,27 +31,33 @@ export default function TodayTasks() {
     try {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
+      const todayISOString = today.toISOString();
       
+      // orderByを削除してシンプルなクエリに変更
       const q = query(
         collection(db, 'workRecords'),
-        where('userId', '==', currentUser.uid),
-        where('date', '>=', today.toISOString()),
-        orderBy('date', 'asc'),
-        limit(5)
+        where('userId', '==', currentUser.uid)
       );
 
       const snapshot = await getDocs(q);
-      const tasksData: Task[] = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          title: data.workType || '作業',
-          fieldName: data.fieldName || '未指定',
-          startTime: data.startTime || '未定',
-          priority: data.priority || 'medium',
-          status: data.status || 'pending'
-        };
-      });
+      
+      // クライアント側でフィルタとソート
+      const tasksData: Task[] = snapshot.docs
+        .map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            title: data.workType || '作業',
+            fieldName: data.fieldName || '未指定',
+            startTime: data.startTime || '未定',
+            priority: data.priority || 'medium',
+            status: data.status || 'pending',
+            date: data.date || ''
+          };
+        })
+        .filter(task => task.date >= todayISOString)
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .slice(0, 5);
 
       setTasks(tasksData);
     } catch (error) {
