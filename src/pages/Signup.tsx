@@ -125,6 +125,10 @@ export default function Signup() {
             </p>
           </div>
         </Card>
+
+        <div className="mt-8 text-center text-sm text-gray-600">
+          <p>JGAP農場管理システム</p>
+        </div>
       </div>
     </div>
   );
