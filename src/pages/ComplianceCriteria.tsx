@@ -3,8 +3,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { collection, query, where, getDocs, addDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
-import { JGAPCriteria, JGAPAttachment } from '../types';
-import { jgapCriteria, getSections, getCriteriaBySection, searchCriteria } from '../data/jgapCriteria';
+import type { JGAPCriteria, JGAPAttachment } from '../types';
+import { getSections, getCriteriaBySection, searchCriteria } from '../data/jgapCriteria';
 import Layout from '../components/layout/Layout';
 import Card from '../components/common/Card';
 import Input from '../components/common/Input';
@@ -15,7 +15,6 @@ const ComplianceCriteria: React.FC = () => {
   const [selectedSection, setSelectedSection] = useState<string>('1');
   const [searchQuery, setSearchQuery] = useState('');
   const [attachments, setAttachments] = useState<Map<string, JGAPAttachment[]>>(new Map());
-  const [loading, setLoading] = useState(false);
   const [uploadingCriteriaId, setUploadingCriteriaId] = useState<string | null>(null);
   const [showAttachmentModal, setShowAttachmentModal] = useState(false);
   const [selectedCriteria, setSelectedCriteria] = useState<JGAPCriteria | null>(null);
@@ -34,7 +33,6 @@ const ComplianceCriteria: React.FC = () => {
     if (!currentUser) return;
 
     try {
-      setLoading(true);
       const attachmentsQuery = query(
         collection(db, 'jgapAttachments'),
         where('userId', '==', currentUser.uid)
@@ -63,8 +61,6 @@ const ComplianceCriteria: React.FC = () => {
       setAttachments(attachmentMap);
     } catch (error) {
       console.error('添付資料の読み込みエラー:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -109,7 +105,7 @@ const ComplianceCriteria: React.FC = () => {
   };
 
   // 添付資料を削除
-  const handleDeleteAttachment = async (attachmentId: string, criteriaId: string) => {
+  const handleDeleteAttachment = async (attachmentId: string) => {
     if (!confirm('この資料を削除しますか？')) return;
 
     try {
@@ -299,7 +295,7 @@ const ComplianceCriteria: React.FC = () => {
                                     </div>
                                   </div>
                                   <button
-                                    onClick={() => handleDeleteAttachment(attachment.id, criteria.id)}
+                                    onClick={() => handleDeleteAttachment(attachment.id)}
                                     className="ml-2 text-red-600 hover:text-red-800"
                                   >
                                     <span className="material-icons text-sm">delete</span>

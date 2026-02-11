@@ -1,4 +1,4 @@
-import { JGAPCriteria } from '../types';
+import type { JGAPCriteria } from '../types';
 
 // JGAP農場用管理点と適合基準（2022青果物）
 // 10ページ〜42ページの内容を構造化
