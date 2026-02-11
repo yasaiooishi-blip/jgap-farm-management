@@ -71,19 +71,29 @@ const ComplianceCriteria: React.FC = () => {
 
   // ファイルアップロード処理
   const handleFileUpload = async (criteriaId: string, itemId: string | null, file: File) => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      alert('ログインが必要です');
+      return;
+    }
 
     try {
       setUploadingItemId(itemId || criteriaId);
       
+      console.log('アップロード開始:', { criteriaId, itemId, fileName: file.name, fileType: file.type });
+      
       // Firebase Storageにアップロード
       const timestamp = Date.now();
       const storageRef = ref(storage, `jgap-attachments/${currentUser.uid}/${timestamp}_${file.name}`);
+      console.log('Storage path:', `jgap-attachments/${currentUser.uid}/${timestamp}_${file.name}`);
+      
       await uploadBytes(storageRef, file);
+      console.log('uploadBytes完了');
+      
       const fileUrl = await getDownloadURL(storageRef);
+      console.log('fileUrl取得完了:', fileUrl);
 
       // Firestoreに記録
-      await addDoc(collection(db, 'jgapAttachments'), {
+      const docData = {
         userId: currentUser.uid,
         organizationId: userProfile?.organizationId || null,
         criteriaId,
@@ -93,7 +103,11 @@ const ComplianceCriteria: React.FC = () => {
         fileType: file.type,
         uploadedAt: serverTimestamp(),
         notes: uploadNotes
-      });
+      };
+      console.log('Firestore document data:', docData);
+      
+      await addDoc(collection(db, 'jgapAttachments'), docData);
+      console.log('Firestore保存完了');
 
       // 再読み込み
       await loadAttachments();
@@ -103,9 +117,16 @@ const ComplianceCriteria: React.FC = () => {
       setSelectedCriteria(null);
       setSelectedItemId(null);
       setUploadNotes('');
-    } catch (error) {
+      
+      alert('ファイルのアップロードに成功しました');
+    } catch (error: any) {
       console.error('ファイルアップロードエラー:', error);
-      alert('ファイルのアップロードに失敗しました');
+      console.error('エラー詳細:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
+      alert(`ファイルのアップロードに失敗しました:\n${error.message || error.toString()}`);
     } finally {
       setUploadingItemId(null);
     }
