@@ -7,11 +7,16 @@ import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Select from '../components/common/Select';
-import type { Field } from '../types';
+import type { Field, UserProfile, Organization } from '../types';
+
+interface FieldWithOwner extends Field {
+  ownerName?: string;
+  organizationName?: string;
+}
 
 export default function Fields() {
-  const { currentUser, getAccessibleUserIds } = useAuth();
-  const [fields, setFields] = useState<Field[]>([]);
+  const { currentUser, getAccessibleUserIds, isAdmin } = useAuth();
+  const [fields, setFields] = useState<FieldWithOwner[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingField, setEditingField] = useState<Field | null>(null);
@@ -25,6 +30,8 @@ export default function Fields() {
   const [success, setSuccess] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('すべて');
+  const [filterOrganization, setFilterOrganization] = useState<string>('すべて');
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
 
   useEffect(() => {
     if (currentUser) {
@@ -63,7 +70,33 @@ export default function Fields() {
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate()
       })) as Field[];
-      setFields(fieldsData);
+
+      // ユーザー情報と組織情報を取得
+      const usersSnapshot = await getDocs(collection(db, 'users'));
+      const usersMap = new Map<string, UserProfile>();
+      usersSnapshot.docs.forEach(doc => {
+        usersMap.set(doc.id, doc.data() as UserProfile);
+      });
+
+      const orgsSnapshot = await getDocs(collection(db, 'organizations'));
+      const orgsMap = new Map<string, Organization>();
+      orgsSnapshot.docs.forEach(doc => {
+        orgsMap.set(doc.id, { id: doc.id, ...doc.data() } as Organization);
+      });
+      setOrganizations(Array.from(orgsMap.values()));
+
+      // 圃場データに所有者情報を追加
+      const fieldsWithOwner: FieldWithOwner[] = fieldsData.map(field => {
+        const user = usersMap.get(field.userId);
+        const org = user?.organizationId ? orgsMap.get(user.organizationId) : null;
+        return {
+          ...field,
+          ownerName: user?.displayName || user?.email?.split('@')[0] || '不明',
+          organizationName: org?.name || '未所属'
+        };
+      });
+
+      setFields(fieldsWithOwner);
     } catch (error) {
       console.error('圃場の読み込みエラー:', error);
       setError('圃場データの読み込みに失敗しました');
@@ -151,6 +184,7 @@ export default function Fields() {
   function handleClearFilters() {
     setSearchTerm('');
     setFilterStatus('すべて');
+    setFilterOrganization('すべて');
   }
 
   const filteredFields = fields.filter(field => {
@@ -158,6 +192,9 @@ export default function Fields() {
       return false;
     }
     if (filterStatus !== 'すべて' && field.status !== filterStatus) {
+      return false;
+    }
+    if (filterOrganization !== 'すべて' && field.organizationName !== filterOrganization) {
       return false;
     }
     return true;
@@ -192,7 +229,7 @@ export default function Fields() {
         )}
 
         <Card title="検索・フィルター">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Input
               label="圃場名・作物で検索"
               value={searchTerm}
@@ -210,6 +247,22 @@ export default function Fields() {
               <option value="休耕">休耕</option>
               <option value="準備中">準備中</option>
             </Select>
+
+            {isAdmin() && (
+              <Select
+                label="組織"
+                value={filterOrganization}
+                onChange={(e) => setFilterOrganization(e.target.value)}
+              >
+                <option value="すべて">すべて</option>
+                <option value="未所属">未所属</option>
+                {organizations.map((org) => (
+                  <option key={org.id} value={org.name}>
+                    {org.name}
+                  </option>
+                ))}
+              </Select>
+            )}
           </div>
 
           <div className="mt-4">
@@ -300,6 +353,11 @@ export default function Fields() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       状態
                     </th>
+                    {isAdmin() && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        所有者
+                      </th>
+                    )}
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       操作
                     </th>
@@ -326,6 +384,14 @@ export default function Fields() {
                           {field.status}
                         </span>
                       </td>
+                      {isAdmin() && (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <div>
+                            <div className="font-medium text-gray-900">{field.ownerName}</div>
+                            <div className="text-xs text-gray-500">{field.organizationName}</div>
+                          </div>
+                        </td>
+                      )}
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
                           onClick={() => handleEdit(field)}
