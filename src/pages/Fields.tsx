@@ -23,6 +23,8 @@ export default function Fields() {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('すべて');
 
   useEffect(() => {
     if (currentUser) {
@@ -146,6 +148,21 @@ export default function Fields() {
     }
   }
 
+  function handleClearFilters() {
+    setSearchTerm('');
+    setFilterStatus('すべて');
+  }
+
+  const filteredFields = fields.filter(field => {
+    if (searchTerm && !field.name.includes(searchTerm) && !field.crop.includes(searchTerm)) {
+      return false;
+    }
+    if (filterStatus !== 'すべて' && field.status !== filterStatus) {
+      return false;
+    }
+    return true;
+  });
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -173,6 +190,35 @@ export default function Fields() {
             {success}
           </div>
         )}
+
+        <Card title="検索・フィルター">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="圃場名・作物で検索"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="例: 第1圃場、トマト"
+            />
+
+            <Select
+              label="状態"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <option value="すべて">すべて</option>
+              <option value="栽培中">栽培中</option>
+              <option value="休耕">休耕</option>
+              <option value="準備中">準備中</option>
+            </Select>
+          </div>
+
+          <div className="mt-4">
+            <Button variant="secondary" onClick={handleClearFilters}>
+              <span className="material-icons mr-1 text-sm">clear</span>
+              フィルタークリア
+            </Button>
+          </div>
+        </Card>
 
         {showForm && (
           <Card title={editingField ? '圃場情報編集' : '新規圃場追加'}>
@@ -226,14 +272,16 @@ export default function Fields() {
           </Card>
         )}
 
-        <Card title="圃場一覧">
+        <Card title={`圃場一覧 (${filteredFields.length}件)`}>
           {loading ? (
             <div className="text-center py-8">読み込み中...</div>
-          ) : fields.length === 0 ? (
+          ) : filteredFields.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <span className="material-icons text-6xl text-gray-300 mb-4 block">landscape</span>
-              <p>登録されている圃場がありません</p>
-              <p className="text-sm mt-2">「新規圃場追加」ボタンから圃場を登録してください</p>
+              <p>表示する圃場がありません</p>
+              {fields.length === 0 && (
+                <p className="text-sm mt-2">「新規圃場追加」ボタンから圃場を登録してください</p>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -258,7 +306,7 @@ export default function Fields() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {fields.map((field) => (
+                  {filteredFields.map((field) => (
                     <tr key={field.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {field.name}

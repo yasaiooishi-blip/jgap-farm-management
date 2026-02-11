@@ -153,10 +153,16 @@ export default function Materials() {
 
   const filteredMaterials = materials.filter(material => {
     const matchesSearch = material.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         material.supplier.toLowerCase().includes(searchTerm.toLowerCase());
+                         material.supplier.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         material.storageLocation.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'すべて' || material.type === filterType;
     return matchesSearch && matchesType;
   });
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setFilterType('すべて');
+  };
 
   const getStockStatus = (quantity: number, minimumStock: number) => {
     if (quantity === 0) return { label: '在庫切れ', color: 'bg-red-100 text-red-800 border-red-300' };
@@ -198,52 +204,54 @@ export default function Materials() {
         </div>
 
         {/* 検索・フィルター */}
-        <Card>
-          <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900">検索・フィルター</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input
-                label="資材名・仕入先で検索"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="検索..."
-              />
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  種別
-                </label>
-                <select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="すべて">すべて</option>
-                  <option value="肥料">肥料</option>
-                  <option value="農薬">農薬</option>
-                  <option value="種子">種子</option>
-                  <option value="その他">その他</option>
-                </select>
-              </div>
+        <Card title="検索・フィルター">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="資材名・仕入先・保管場所で検索"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="例: 化成肥料、農協、倉庫A"
+            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                種別
+              </label>
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="すべて">すべて</option>
+                <option value="肥料">肥料</option>
+                <option value="農薬">農薬</option>
+                <option value="種子">種子</option>
+                <option value="その他">その他</option>
+              </select>
             </div>
+          </div>
+
+          <div className="mt-4">
+            <Button variant="secondary" onClick={handleClearFilters}>
+              <span className="material-icons mr-1 text-sm">clear</span>
+              フィルタークリア
+            </Button>
           </div>
         </Card>
 
         {/* 資材一覧 */}
-        <Card>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900">資材一覧 ({filteredMaterials.length}件)</h3>
-          </div>
-
+        <Card title={`資材一覧 (${filteredMaterials.length}件)`}>
           {filteredMaterials.length === 0 ? (
             <div className="text-center py-12">
               <span className="material-icons text-6xl text-gray-300 mb-2">inventory_2</span>
-              <p className="text-gray-500">資材が登録されていません</p>
-              <Button
-                onClick={() => setShowAddModal(true)}
-                className="mt-4"
-              >
-                資材を登録
-              </Button>
+              <p className="text-gray-500">表示する資材がありません</p>
+              {materials.length === 0 && (
+                <Button
+                  onClick={() => setShowAddModal(true)}
+                  className="mt-4"
+                >
+                  資材を登録
+                </Button>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
