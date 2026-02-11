@@ -11,7 +11,7 @@ import Select from '../components/common/Select';
 import type { WorkRecord, Field } from '../types';
 
 export default function WorkRecords() {
-  const { currentUser } = useAuth();
+  const { currentUser, getAccessibleUserIds } = useAuth();
   const navigate = useNavigate();
   const [workRecords, setWorkRecords] = useState<WorkRecord[]>([]);
   const [fields, setFields] = useState<Field[]>([]);
@@ -33,11 +33,29 @@ export default function WorkRecords() {
   async function loadData() {
     try {
       setError('');
+      // 権限に応じたデータ取得
+      const accessibleUserIds = await getAccessibleUserIds();
+      
+      if (accessibleUserIds.length === 0) {
+        setFields([]);
+        setWorkRecords([]);
+        setLoading(false);
+        return;
+      }
+
       // 圃場を読み込み
-      const fieldsQuery = query(
-        collection(db, 'fields'),
-        where('userId', '==', currentUser?.uid)
-      );
+      let fieldsQuery;
+      if (accessibleUserIds.length === 1) {
+        fieldsQuery = query(
+          collection(db, 'fields'),
+          where('userId', '==', accessibleUserIds[0])
+        );
+      } else {
+        fieldsQuery = query(
+          collection(db, 'fields'),
+          where('userId', 'in', accessibleUserIds.slice(0, 10))
+        );
+      }
       const fieldsSnapshot = await getDocs(fieldsQuery);
       const fieldsData = fieldsSnapshot.docs.map(doc => ({
         id: doc.id,
@@ -46,10 +64,18 @@ export default function WorkRecords() {
       setFields(fieldsData);
 
       // 作業記録を読み込み（orderByを削除してインデックス不要に）
-      const recordsQuery = query(
-        collection(db, 'workRecords'),
-        where('userId', '==', currentUser?.uid)
-      );
+      let recordsQuery;
+      if (accessibleUserIds.length === 1) {
+        recordsQuery = query(
+          collection(db, 'workRecords'),
+          where('userId', '==', accessibleUserIds[0])
+        );
+      } else {
+        recordsQuery = query(
+          collection(db, 'workRecords'),
+          where('userId', 'in', accessibleUserIds.slice(0, 10))
+        );
+      }
       const recordsSnapshot = await getDocs(recordsQuery);
       const recordsData = recordsSnapshot.docs.map(doc => ({
         id: doc.id,

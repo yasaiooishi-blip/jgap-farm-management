@@ -23,7 +23,7 @@ interface Material {
 }
 
 export default function Materials() {
-  const { currentUser } = useAuth();
+  const { currentUser, getAccessibleUserIds } = useAuth();
   const navigate = useNavigate();
   const [materials, setMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,10 +53,27 @@ export default function Materials() {
     if (!currentUser) return;
 
     try {
-      const q = query(
-        collection(db, 'materials'),
-        where('userId', '==', currentUser.uid)
-      );
+      // 権限に応じたデータ取得
+      const accessibleUserIds = await getAccessibleUserIds();
+      
+      if (accessibleUserIds.length === 0) {
+        setMaterials([]);
+        setLoading(false);
+        return;
+      }
+
+      let q;
+      if (accessibleUserIds.length === 1) {
+        q = query(
+          collection(db, 'materials'),
+          where('userId', '==', accessibleUserIds[0])
+        );
+      } else {
+        q = query(
+          collection(db, 'materials'),
+          where('userId', 'in', accessibleUserIds.slice(0, 10))
+        );
+      }
 
       const snapshot = await getDocs(q);
       const materialsData: Material[] = snapshot.docs.map(doc => ({

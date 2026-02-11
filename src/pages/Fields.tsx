@@ -10,7 +10,7 @@ import Select from '../components/common/Select';
 import type { Field } from '../types';
 
 export default function Fields() {
-  const { currentUser } = useAuth();
+  const { currentUser, getAccessibleUserIds } = useAuth();
   const [fields, setFields] = useState<Field[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -32,10 +32,29 @@ export default function Fields() {
 
   async function loadFields() {
     try {
-      const q = query(
-        collection(db, 'fields'),
-        where('userId', '==', currentUser?.uid)
-      );
+      // 権限に応じたデータ取得
+      const accessibleUserIds = await getAccessibleUserIds();
+      
+      let q;
+      if (accessibleUserIds.length === 0) {
+        // アクセス可能なユーザーがいない場合は空の結果を返す
+        setFields([]);
+        setLoading(false);
+        return;
+      } else if (accessibleUserIds.length === 1) {
+        // 自分だけの場合
+        q = query(
+          collection(db, 'fields'),
+          where('userId', '==', accessibleUserIds[0])
+        );
+      } else {
+        // 複数のユーザーのデータにアクセス可能な場合
+        q = query(
+          collection(db, 'fields'),
+          where('userId', 'in', accessibleUserIds.slice(0, 10)) // Firestoreの制限: in は最大10個
+        );
+      }
+      
       const querySnapshot = await getDocs(q);
       const fieldsData = querySnapshot.docs.map(doc => ({
         id: doc.id,
