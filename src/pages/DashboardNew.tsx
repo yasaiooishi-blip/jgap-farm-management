@@ -103,11 +103,19 @@ export default function DashboardNew() {
       path: '/add-work-record'
     },
     {
+      icon: 'local_shipping',
+      label: '出荷管理',
+      description: '出荷記録を管理',
+      color: 'bg-blue-500',
+      hoverColor: 'hover:bg-blue-600',
+      path: '/shipments'
+    },
+    {
       icon: 'terrain',
       label: '圃場管理',
       description: '圃場情報を管理',
-      color: 'bg-blue-500',
-      hoverColor: 'hover:bg-blue-600',
+      color: 'bg-teal-500',
+      hoverColor: 'hover:bg-teal-600',
       path: '/fields'
     },
     {

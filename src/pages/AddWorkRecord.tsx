@@ -422,8 +422,10 @@ export default function AddWorkRecord() {
             <option value="その他">その他</option>
           </Select>
 
-          {/* 作業数量の入力 */}
-          {formData.workType !== 'その他' && (
+          {/* 作業数量の入力（施肥・農薬散布以外） */}
+          {formData.workType !== 'その他' && 
+           formData.workType !== '施肥' && 
+           formData.workType !== '農薬散布' && (
             <div className="border-l-4 border-green-500 bg-green-50 p-4 rounded space-y-4">
               <div className="flex items-center mb-2">
                 <span className="material-icons text-green-600 mr-2">analytics</span>

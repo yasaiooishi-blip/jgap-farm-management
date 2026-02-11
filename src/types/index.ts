@@ -65,6 +65,28 @@ export interface Permission {
   approvedAt?: Date;
 }
 
+// 出荷記録の型定義
+export interface Shipment {
+  id: string;
+  userId: string;
+  shipmentDate: string; // YYYY-MM-DD形式
+  destination: string; // 出荷先
+  fieldId?: string;
+  fieldName?: string;
+  crop: string; // 作物名
+  variety?: string; // 品種
+  grade: '秀' | '優' | '良' | '規格外' | 'その他'; // 等級
+  size?: 'L' | 'M' | 'S' | '2L' | '3L' | 'その他'; // サイズ
+  quantity: number; // 出荷量
+  unit: string; // 単位
+  unitPrice?: number; // 単価
+  totalAmount?: number; // 金額
+  worker: string; // 担当者
+  notes?: string; // 備考
+  workRecordId?: string; // 作業記録との紐付け
+  createdAt: Date;
+}
+
 // フォーム入力用の型定義
 export interface FieldInput {
   name: string;

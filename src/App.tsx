@@ -9,6 +9,8 @@ import WorkRecords from './pages/WorkRecords';
 import AddWorkRecord from './pages/AddWorkRecord';
 import Materials from './pages/Materials';
 import MaterialUsage from './pages/MaterialUsage';
+import Shipments from './pages/Shipments';
+import AddShipment from './pages/AddShipment';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 // 管理者用ページ
@@ -92,6 +94,24 @@ function App() {
             element={
               <PrivateRoute>
                 <Reports />
+              </PrivateRoute>
+            }
+          />
+          
+          <Route
+            path="/shipments"
+            element={
+              <PrivateRoute>
+                <Shipments />
+              </PrivateRoute>
+            }
+          />
+          
+          <Route
+            path="/add-shipment"
+            element={
+              <PrivateRoute>
+                <AddShipment />
               </PrivateRoute>
             }
           />
