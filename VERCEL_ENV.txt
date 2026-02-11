@@ -1,0 +1,10 @@
+# Vercel 環境変数設定用
+# これらをコピーして Vercel の Environment Variables に貼り付けてください
+
+VITE_FIREBASE_API_KEY=AIzaSyACN-g79jLRXuV7w4eHS_PYjOrm8zhL6o4
+VITE_FIREBASE_AUTH_DOMAIN=jgap-farm-system.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=jgap-farm-system
+VITE_FIREBASE_STORAGE_BUCKET=jgap-farm-system.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=310862986394
+VITE_FIREBASE_APP_ID=1:310862986394:web:bc4621002d0c72eb37b323
+VITE_FIREBASE_MEASUREMENT_ID=G-VBL6W34GE7
