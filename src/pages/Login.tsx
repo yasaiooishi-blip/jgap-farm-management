@@ -107,10 +107,6 @@ export default function Login() {
             </p>
           </div>
         </Card>
-
-        <div className="mt-8 text-center text-sm text-gray-600">
-          <p>© 2024 JGAP農場管理システム</p>
-        </div>
       </div>
     </div>
   );
