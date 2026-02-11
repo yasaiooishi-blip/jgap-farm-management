@@ -23,12 +23,39 @@ export interface WorkRecord {
   createdAt: Date;
 }
 
+// ユーザーロール
+export type UserRole = 'admin' | 'org_leader' | 'user';
+
 // ユーザーの型定義
 export interface UserProfile {
   uid: string;
   email: string;
   name?: string;
+  displayName?: string;
+  organizationId?: string;
+  role: UserRole;
   createdAt: Date;
+}
+
+// 組織の型定義
+export interface Organization {
+  id: string;
+  name: string;
+  leaderId: string;
+  memberIds: string[];
+  createdAt: Date;
+}
+
+// 共有権限の型定義
+export interface Permission {
+  id: string;
+  fromUserId: string;     // 許可を与えるユーザー
+  toUserId: string;       // 許可を受けるユーザー
+  status: 'pending' | 'approved' | 'rejected';
+  canEdit: boolean;       // 編集権限
+  canView: boolean;       // 閲覧権限
+  requestedAt: Date;
+  approvedAt?: Date;
 }
 
 // フォーム入力用の型定義
