@@ -7,7 +7,7 @@ import {
   signOut,
   onAuthStateChanged
 } from 'firebase/auth';
-import { doc, getDoc, getDocs, collection, query, where } from 'firebase/firestore';
+import { doc, getDoc, getDocs, collection, query, where, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import type { UserProfile, UserRole, Permission } from '../types';
 
@@ -148,24 +148,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // ユーザープロファイルを読み込む
+  // ユーザープロファイルを読み込む、または作成する
   async function loadUserProfile(user: User) {
     try {
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+      
       if (userDoc.exists()) {
-        setUserProfile(userDoc.data() as UserProfile);
+        // 既存のユーザープロファイルを読み込む
+        const data = userDoc.data() as UserProfile;
+        setUserProfile(data);
+        console.log('✅ ユーザープロファイル読み込み成功:', data);
       } else {
-        // デフォルトのユーザープロファイル（一般ユーザー）
-        setUserProfile({
+        // 新規ユーザーの場合、デフォルトプロファイルを作成
+        console.log('📝 新規ユーザー: Firestoreにドキュメントを作成します');
+        
+        const newUserProfile: UserProfile = {
+          uid: user.uid,
+          email: user.email || '',
+          role: 'user', // デフォルトは一般ユーザー
+          createdAt: new Date()
+        };
+        
+        // Firestoreにドキュメントを作成
+        await setDoc(userDocRef, {
           uid: user.uid,
           email: user.email || '',
           role: 'user',
-          createdAt: new Date()
+          createdAt: serverTimestamp()
         });
+        
+        setUserProfile(newUserProfile);
+        console.log('✅ 新規ユーザープロファイル作成成功:', newUserProfile);
       }
     } catch (error) {
-      console.error('ユーザープロファイル読み込みエラー:', error);
-      // デフォルトのユーザープロファイル
+      console.error('❌ ユーザープロファイル読み込み/作成エラー:', error);
+      // エラーの場合もデフォルトのユーザープロファイルを設定
       setUserProfile({
         uid: user.uid,
         email: user.email || '',
