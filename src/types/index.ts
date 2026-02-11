@@ -14,13 +14,20 @@ export interface WorkRecord {
   id: string;
   userId: string;
   date: string; // YYYY-MM-DD形式
+  startTime?: string; // HH:MM形式
+  endTime?: string; // HH:MM形式
+  workHours?: number; // 作業時間（時間）
   fieldId: string;
   fieldName: string;
   crop: string;
-  workType: '施肥' | '除草' | '収穫' | '農薬散布' | '播種' | '定植' | '整地' | 'その他';
+  workType: '施肥' | '除草' | '収穫' | '農薬散布' | '播種' | '定植' | '整地' | '調整作業' | '出荷' | 'その他';
   workDetail: string;
   worker: string;
+  // 作業種別ごとの数量
+  quantity?: number; // 数量
+  unit?: string; // 単位
   createdAt: Date;
+  mediaUrls?: string[]; // 写真・動画のURL
 }
 
 // ユーザーロール
@@ -68,10 +75,15 @@ export interface FieldInput {
 
 export interface WorkRecordInput {
   date: string;
+  startTime?: string;
+  endTime?: string;
+  workHours?: number;
   fieldId: string;
   fieldName: string;
   crop: string;
   workType: WorkRecord['workType'];
   workDetail: string;
   worker: string;
+  quantity?: number;
+  unit?: string;
 }

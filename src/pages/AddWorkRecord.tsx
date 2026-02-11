@@ -28,10 +28,15 @@ export default function AddWorkRecord() {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
+    startTime: '',
+    endTime: '',
     fieldId: '',
     workType: '施肥' as WorkRecord['workType'],
     workDetail: '',
     worker: '',
+    // 作業種別ごとの数量
+    quantity: '',
+    unit: '',
     // 農薬・肥料使用の追加項目
     useMaterial: false,
     materialId: '',
@@ -165,6 +170,39 @@ export default function AddWorkRecord() {
     return urls;
   };
 
+  // 作業種別に応じた入力ラベルと単位を取得
+  const getQuantityLabel = () => {
+    switch (formData.workType) {
+      case '施肥': return { label: '使用量', defaultUnit: 'kg' };
+      case '農薬散布': return { label: '使用量', defaultUnit: 'L' };
+      case '除草': return { label: '除草面積', defaultUnit: 'm²' };
+      case '収穫': return { label: '収穫量', defaultUnit: 'kg' };
+      case '播種': return { label: '播種量', defaultUnit: 'kg' };
+      case '定植': return { label: '定植量', defaultUnit: '株' };
+      case '整地': return { label: '整地面積', defaultUnit: 'm²' };
+      case '調整作業': return { label: '調整量', defaultUnit: 'kg' };
+      case '出荷': return { label: '出荷量', defaultUnit: 'kg' };
+      default: return { label: '数量', defaultUnit: '' };
+    }
+  };
+
+  // 作業時間を計算
+  const calculateWorkHours = (start: string, end: string): number | null => {
+    if (!start || !end) return null;
+    
+    const [startHour, startMin] = start.split(':').map(Number);
+    const [endHour, endMin] = end.split(':').map(Number);
+    
+    const startMinutes = startHour * 60 + startMin;
+    const endMinutes = endHour * 60 + endMin;
+    
+    if (endMinutes <= startMinutes) {
+      return null; // 終了時刻が開始時刻より前または同じ
+    }
+    
+    return (endMinutes - startMinutes) / 60;
+  };
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
@@ -178,6 +216,17 @@ export default function AddWorkRecord() {
     if (!selectedField) {
       setError('圃場を選択してください');
       return;
+    }
+
+    // 作業時間のバリデーション
+    let workHours: number | undefined = undefined;
+    if (formData.startTime && formData.endTime) {
+      const hours = calculateWorkHours(formData.startTime, formData.endTime);
+      if (hours === null) {
+        setError('終了時刻は開始時刻より後にしてください');
+        return;
+      }
+      workHours = hours;
     }
 
     // 資材使用がある場合のバリデーション
@@ -207,7 +256,7 @@ export default function AddWorkRecord() {
       const fileUrls = await uploadFiles();
 
       // 作業記録を追加
-      await addDoc(collection(db, 'workRecords'), {
+      const recordData: any = {
         userId: currentUser?.uid,
         date: formData.date,
         fieldId: formData.fieldId,
@@ -218,7 +267,20 @@ export default function AddWorkRecord() {
         worker: formData.worker,
         mediaUrls: fileUrls, // 写真・動画のURL
         createdAt: serverTimestamp()
-      });
+      };
+
+      // 作業時間を追加
+      if (formData.startTime) recordData.startTime = formData.startTime;
+      if (formData.endTime) recordData.endTime = formData.endTime;
+      if (workHours !== undefined) recordData.workHours = workHours;
+
+      // 作業数量を追加
+      if (formData.quantity && formData.unit) {
+        recordData.quantity = Number(formData.quantity);
+        recordData.unit = formData.unit;
+      }
+
+      await addDoc(collection(db, 'workRecords'), recordData);
 
       // 資材使用がある場合は、農薬・肥料使用簿にも記録
       if (formData.useMaterial && formData.materialId && formData.materialQuantity) {
@@ -298,6 +360,36 @@ export default function AddWorkRecord() {
             onChange={(e) => setFormData({ ...formData, date: e.target.value })}
           />
 
+          {/* 作業時間 */}
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="開始時刻"
+              type="time"
+              value={formData.startTime}
+              onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+              placeholder="例: 09:00"
+            />
+            <Input
+              label="終了時刻"
+              type="time"
+              value={formData.endTime}
+              onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+              placeholder="例: 17:00"
+            />
+          </div>
+
+          {/* 作業時間の表示 */}
+          {formData.startTime && formData.endTime && (
+            <div className="bg-blue-50 border border-blue-200 rounded p-3">
+              <div className="flex items-center">
+                <span className="material-icons text-blue-600 mr-2 text-sm">schedule</span>
+                <p className="text-sm text-gray-700">
+                  作業時間: <span className="font-semibold">{calculateWorkHours(formData.startTime, formData.endTime)?.toFixed(1) || '計算エラー'}</span> 時間
+                </p>
+              </div>
+            </div>
+          )}
+
           <Select
             label="圃場"
             required
@@ -325,8 +417,52 @@ export default function AddWorkRecord() {
             <option value="播種">播種</option>
             <option value="定植">定植</option>
             <option value="整地">整地</option>
+            <option value="調整作業">調整作業</option>
+            <option value="出荷">出荷</option>
             <option value="その他">その他</option>
           </Select>
+
+          {/* 作業数量の入力 */}
+          {formData.workType !== 'その他' && (
+            <div className="border-l-4 border-green-500 bg-green-50 p-4 rounded space-y-4">
+              <div className="flex items-center mb-2">
+                <span className="material-icons text-green-600 mr-2">analytics</span>
+                <h3 className="font-semibold text-gray-900">
+                  作業数量（任意）
+                </h3>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label={getQuantityLabel().label}
+                  type="number"
+                  step="0.1"
+                  value={formData.quantity}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    quantity: e.target.value,
+                    unit: formData.unit || getQuantityLabel().defaultUnit 
+                  })}
+                  placeholder="例: 100"
+                />
+                <Input
+                  label="単位"
+                  value={formData.unit}
+                  onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                  placeholder={getQuantityLabel().defaultUnit}
+                />
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                <div className="flex items-start">
+                  <span className="material-icons text-blue-600 mr-2 text-sm">info</span>
+                  <p className="text-xs text-gray-700">
+                    作業の実績数量を記録できます（例: 収穫量、除草面積など）
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* 施肥または農薬散布の場合、資材使用入力欄を表示 */}
           {formData.useMaterial && (formData.workType === '施肥' || formData.workType === '農薬散布') && (
