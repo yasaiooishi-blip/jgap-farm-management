@@ -11,6 +11,10 @@ import Materials from './pages/Materials';
 import MaterialUsage from './pages/MaterialUsage';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
+// 管理者用ページ
+import AdminDashboard from './pages/admin/AdminDashboard';
+import OrganizationManagement from './pages/admin/OrganizationManagement';
+import UserManagement from './pages/admin/UserManagement';
 
 function App() {
   return (
@@ -88,6 +92,34 @@ function App() {
             element={
               <PrivateRoute>
                 <Reports />
+              </PrivateRoute>
+            }
+          />
+          
+          {/* 管理者用ルート */}
+          <Route
+            path="/admin"
+            element={
+              <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          
+          <Route
+            path="/admin/organizations"
+            element={
+              <PrivateRoute>
+                <OrganizationManagement />
+              </PrivateRoute>
+            }
+          />
+          
+          <Route
+            path="/admin/users"
+            element={
+              <PrivateRoute>
+                <UserManagement />
               </PrivateRoute>
             }
           />

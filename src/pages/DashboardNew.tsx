@@ -17,7 +17,7 @@ interface Stats {
 }
 
 export default function DashboardNew() {
-  const { currentUser } = useAuth();
+  const { currentUser, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState<Stats>({
     totalFields: 0,
@@ -146,10 +146,20 @@ export default function DashboardNew() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            おかえりなさい、{currentUser?.email?.split('@')[0]}さん
-          </h1>
-          <p className="text-gray-600">今日も効率的な農場管理をサポートします</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                おかえりなさい、{currentUser?.email?.split('@')[0]}さん
+              </h1>
+              <p className="text-gray-600">今日も効率的な農場管理をサポートします</p>
+            </div>
+            {isAdmin() && (
+              <Button onClick={() => navigate('/admin')} variant="secondary">
+                <span className="material-icons mr-1 text-sm">admin_panel_settings</span>
+                管理者メニュー
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Stats Grid */}
