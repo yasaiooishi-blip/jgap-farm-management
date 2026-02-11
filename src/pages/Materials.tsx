@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs, addDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -31,7 +30,6 @@ interface MaterialWithOwner extends Material {
 
 export default function Materials() {
   const { currentUser, getAccessibleUserIds, isAdmin } = useAuth();
-  const navigate = useNavigate();
   const [materials, setMaterials] = useState<MaterialWithOwner[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);

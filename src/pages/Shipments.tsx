@@ -12,7 +12,7 @@ import Textarea from '../components/common/Textarea';
 import type { Shipment, Field } from '../types';
 
 export default function Shipments() {
-  const { currentUser, getAccessibleUserIds, isAdmin } = useAuth();
+  const { currentUser, getAccessibleUserIds } = useAuth();
   const navigate = useNavigate();
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [fields, setFields] = useState<Field[]>([]);

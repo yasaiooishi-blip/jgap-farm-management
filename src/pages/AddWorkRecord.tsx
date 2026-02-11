@@ -77,8 +77,8 @@ export default function AddWorkRecord() {
         .map(doc => ({
           id: doc.id,
           ...doc.data()
-        }))
-        .filter(field => field.userId === currentUser?.uid) as Field[];
+        } as Field))
+        .filter(field => field.userId === currentUser?.uid);
       setFields(fieldsData);
     } catch (error: any) {
       console.error('圃場の読み込みエラー:', error);

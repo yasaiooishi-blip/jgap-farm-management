@@ -247,9 +247,6 @@ const ComplianceCriteria: React.FC = () => {
                 
                 <div className="space-y-6">
                   {displayedCriteria.map((criteria) => {
-                    const criteriaAttachments = attachments.get(criteria.id) || [];
-                    const hasAttachment = criteriaAttachments.length > 0;
-
                     return (
                       <div
                         key={criteria.id}

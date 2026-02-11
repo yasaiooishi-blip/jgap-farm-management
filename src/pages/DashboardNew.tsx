@@ -58,9 +58,9 @@ export default function DashboardNew() {
       const allWorkRecords = workRecordsSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
+      })) as any[];
       
-      const pendingTasksCount = allWorkRecords.filter(record => 
+      const pendingTasksCount = allWorkRecords.filter((record: any) => 
         record.date >= todayISOString && record.status === 'pending'
       ).length;
 
@@ -69,7 +69,7 @@ export default function DashboardNew() {
       weekAgo.setDate(weekAgo.getDate() - 7);
       const weekAgoISOString = weekAgo.toISOString();
       
-      const recentActivitiesCount = allWorkRecords.filter(record =>
+      const recentActivitiesCount = allWorkRecords.filter((record: any) =>
         record.date >= weekAgoISOString
       ).length;
 

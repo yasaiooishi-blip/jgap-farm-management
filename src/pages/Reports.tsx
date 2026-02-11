@@ -6,7 +6,6 @@ import Layout from '../components/layout/Layout';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
-import Select from '../components/common/Select';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -665,7 +664,7 @@ export default function Reports() {
                         fill="#8884d8"
                         dataKey="value"
                       >
-                        {getWorkByType().map((entry, index) => (
+                        {getWorkByType().map((_, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
@@ -733,7 +732,7 @@ export default function Reports() {
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {getWorkByType().map((entry, index) => (
+                      {getWorkByType().map((_, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
@@ -803,7 +802,7 @@ export default function Reports() {
                         fill="#8884d8"
                         dataKey="value"
                       >
-                        {getQuantityByGrade().map((entry, index) => (
+                        {getQuantityByGrade().map((_, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
