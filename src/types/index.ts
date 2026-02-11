@@ -117,9 +117,25 @@ export interface JGAPCriteria {
   sectionTitle: string; // セクション名（例: "農場の見える化"）
   managementPoint: string; // 管理点番号（例: "1.1"）
   description: string; // 管理点の内容
-  criteriaLevel: '必須' | '重要' | '推奨'; // 適合基準レベル
+  criteriaLevel: '必須' | '重要' | '努力'; // 適合基準レベル
   criteriaContent: string; // 適合基準の内容
+  criteriaItems?: JGAPCriteriaItem[]; // 適合基準の詳細項目
   order: number; // 表示順序
+}
+
+// JGAP適合基準の詳細項目
+export interface JGAPCriteriaItem {
+  id: string; // 項目ID（例: "1.1-1", "1.1-2"）
+  label: string; // 項目ラベル（例: "(1)", "(2)", "a.", "b."）
+  content: string; // 項目の内容
+  subItems?: JGAPCriteriaSubItem[]; // サブ項目
+}
+
+// JGAP適合基準のサブ項目
+export interface JGAPCriteriaSubItem {
+  id: string; // サブ項目ID（例: "1.4-1-a", "1.4-1-b"）
+  label: string; // サブ項目ラベル
+  content: string; // サブ項目の内容
 }
 
 // JGAP資料添付の型定義
@@ -128,6 +144,7 @@ export interface JGAPAttachment {
   userId: string;
   organizationId?: string;
   criteriaId: string; // 対応する管理点のID
+  itemId?: string; // 対応する適合基準項目のID（例: "1.1-1", "1.1-2"）
   fileName: string;
   fileUrl: string;
   fileType: string; // PDFやExcelなどのMIMEタイプ

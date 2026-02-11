@@ -15,10 +15,12 @@ const ComplianceCriteria: React.FC = () => {
   const [selectedSection, setSelectedSection] = useState<string>('1');
   const [searchQuery, setSearchQuery] = useState('');
   const [attachments, setAttachments] = useState<Map<string, JGAPAttachment[]>>(new Map());
-  const [uploadingCriteriaId, setUploadingCriteriaId] = useState<string | null>(null);
+  const [uploadingItemId, setUploadingItemId] = useState<string | null>(null);
   const [showAttachmentModal, setShowAttachmentModal] = useState(false);
   const [selectedCriteria, setSelectedCriteria] = useState<JGAPCriteria | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [uploadNotes, setUploadNotes] = useState('');
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const sections = getSections();
 
@@ -47,6 +49,7 @@ const ComplianceCriteria: React.FC = () => {
           userId: data.userId,
           organizationId: data.organizationId,
           criteriaId: data.criteriaId,
+          itemId: data.itemId || null,
           fileName: data.fileName,
           fileUrl: data.fileUrl,
           fileType: data.fileType,
@@ -54,8 +57,10 @@ const ComplianceCriteria: React.FC = () => {
           notes: data.notes
         };
 
-        const existing = attachmentMap.get(data.criteriaId) || [];
-        attachmentMap.set(data.criteriaId, [...existing, attachment]);
+        // itemIdがある場合はitemIdでグループ化、ない場合はcriteriaIdでグループ化
+        const key = data.itemId || data.criteriaId;
+        const existing = attachmentMap.get(key) || [];
+        attachmentMap.set(key, [...existing, attachment]);
       });
 
       setAttachments(attachmentMap);
@@ -65,11 +70,11 @@ const ComplianceCriteria: React.FC = () => {
   };
 
   // ファイルアップロード処理
-  const handleFileUpload = async (criteriaId: string, file: File) => {
+  const handleFileUpload = async (criteriaId: string, itemId: string | null, file: File) => {
     if (!currentUser) return;
 
     try {
-      setUploadingCriteriaId(criteriaId);
+      setUploadingItemId(itemId || criteriaId);
       
       // Firebase Storageにアップロード
       const timestamp = Date.now();
@@ -82,6 +87,7 @@ const ComplianceCriteria: React.FC = () => {
         userId: currentUser.uid,
         organizationId: userProfile?.organizationId || null,
         criteriaId,
+        itemId: itemId || null,
         fileName: file.name,
         fileUrl,
         fileType: file.type,
@@ -95,12 +101,13 @@ const ComplianceCriteria: React.FC = () => {
       // リセット
       setShowAttachmentModal(false);
       setSelectedCriteria(null);
+      setSelectedItemId(null);
       setUploadNotes('');
     } catch (error) {
       console.error('ファイルアップロードエラー:', error);
       alert('ファイルのアップロードに失敗しました');
     } finally {
-      setUploadingCriteriaId(null);
+      setUploadingItemId(null);
     }
   };
 
