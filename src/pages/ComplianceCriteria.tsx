@@ -256,87 +256,94 @@ const ComplianceCriteria: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* 適合基準 */}
-                        <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                          <div className="text-sm font-semibold text-gray-700 mb-2">
-                            適合基準:
-                          </div>
-                          <div className="text-sm text-gray-700">
-                            {criteria.criteriaContent}
-                          </div>
-                        </div>
+                        {/* 適合基準の詳細項目 */}
+                        {criteria.criteriaItems && criteria.criteriaItems.length > 0 ? (
+                          <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                            <div className="text-sm font-semibold text-gray-700 mb-3">
+                              適合基準:
+                            </div>
+                            <div className="space-y-3">
+                              {criteria.criteriaItems.map((item) => {
+                                const itemAttachments = attachments.get(item.id) || [];
+                                const hasItemAttachment = itemAttachments.length > 0;
 
-                        {/* 添付資料 */}
-                        <div className="mb-4">
-                          {criteriaAttachments.length > 0 ? (
-                            <div className="space-y-2">
-                              <div className="text-sm font-semibold text-gray-700">
-                                添付資料 ({criteriaAttachments.length}件):
-                              </div>
-                              {criteriaAttachments.map((attachment) => (
-                                <div
-                                  key={attachment.id}
-                                  className="flex items-center justify-between bg-blue-50 rounded-lg p-3"
-                                >
-                                  <div className="flex items-center gap-3 flex-1">
-                                    <span className="material-icons text-blue-600">
-                                      insert_drive_file
-                                    </span>
-                                    <div className="flex-1 min-w-0">
-                                      <a
-                                        href={attachment.fileUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-sm font-medium text-blue-600 hover:text-blue-800 truncate block"
-                                      >
-                                        {attachment.fileName}
-                                      </a>
-                                      {attachment.notes && (
-                                        <div className="text-xs text-gray-600 mt-1">
-                                          {attachment.notes}
-                                        </div>
-                                      )}
-                                      <div className="text-xs text-gray-500 mt-1">
-                                        {attachment.uploadedAt.toLocaleDateString('ja-JP')}
-                                      </div>
+                                return (
+                                  <div key={item.id} className="bg-white rounded-lg p-3 border border-gray-200">
+                                    <div className="flex items-start mb-2">
+                                      <span className="font-semibold text-green-700 mr-2">{item.label}</span>
+                                      <span className="text-sm text-gray-700 flex-1">{item.content}</span>
                                     </div>
-                                  </div>
-                                  <button
-                                    onClick={() => handleDeleteAttachment(attachment.id)}
-                                    className="ml-2 text-red-600 hover:text-red-800"
-                                  >
-                                    <span className="material-icons text-sm">delete</span>
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-sm text-gray-500 italic">
-                              添付資料がありません
-                            </div>
-                          )}
-                        </div>
 
-                        {/* 資料添付ボタン */}
-                        <Button
-                          onClick={() => {
-                            setSelectedCriteria(criteria);
-                            setShowAttachmentModal(true);
-                          }}
-                          className={`w-full ${
-                            hasAttachment
-                              ? 'bg-blue-600 hover:bg-blue-700'
-                              : 'bg-red-600 hover:bg-red-700'
-                          }`}
-                          disabled={uploadingCriteriaId === criteria.id}
-                        >
-                          <span className="material-icons mr-2">attach_file</span>
-                          {uploadingCriteriaId === criteria.id
-                            ? 'アップロード中...'
-                            : hasAttachment
-                            ? '資料を追加'
-                            : '資料を添付（未添付）'}
-                        </Button>
+                                    {/* サブ項目 */}
+                                    {item.subItems && item.subItems.length > 0 && (
+                                      <div className="ml-6 mt-2 space-y-1">
+                                        {item.subItems.map((subItem) => (
+                                          <div key={subItem.id} className="text-sm">
+                                            <span className="font-semibold text-gray-600 mr-2">{subItem.label}</span>
+                                            <span className="text-gray-700">{subItem.content}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+
+                                    {/* 項目の添付資料 */}
+                                    {itemAttachments.length > 0 && (
+                                      <div className="mt-2 space-y-1">
+                                        {itemAttachments.map((attachment) => (
+                                          <div key={attachment.id} className="flex items-center justify-between bg-blue-50 rounded p-2">
+                                            <button
+                                              onClick={() => setPreviewUrl(attachment.fileUrl)}
+                                              className="flex items-center gap-2 flex-1 min-w-0"
+                                            >
+                                              <span className="material-icons text-blue-600 text-sm">insert_drive_file</span>
+                                              <span className="text-xs font-medium text-blue-600 hover:text-blue-800 truncate">
+                                                {attachment.fileName}
+                                              </span>
+                                            </button>
+                                            <button
+                                              onClick={() => handleDeleteAttachment(attachment.id)}
+                                              className="ml-2 text-red-600 hover:text-red-800"
+                                            >
+                                              <span className="material-icons text-sm">delete</span>
+                                            </button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+
+                                    {/* 項目の資料添付ボタン */}
+                                    <Button
+                                      onClick={() => {
+                                        setSelectedCriteria(criteria);
+                                        setSelectedItemId(item.id);
+                                        setShowAttachmentModal(true);
+                                      }}
+                                      className={`w-full mt-2 text-xs py-1 ${
+                                        hasItemAttachment
+                                          ? 'bg-blue-600 hover:bg-blue-700'
+                                          : 'bg-red-600 hover:bg-red-700'
+                                      }`}
+                                      disabled={uploadingItemId === item.id}
+                                    >
+                                      <span className="material-icons mr-1" style={{fontSize: '14px'}}>attach_file</span>
+                                      {uploadingItemId === item.id ? 'アップロード中...' : hasItemAttachment ? '資料を追加' : '資料を添付'}
+                                    </Button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                            <div className="text-sm font-semibold text-gray-700 mb-2">
+                              適合基準:
+                            </div>
+                            <div className="text-sm text-gray-700">
+                              {criteria.criteriaContent}
+                            </div>
+                          </div>
+                        )}
+
                       </div>
                     );
                   })}
@@ -364,6 +371,7 @@ const ComplianceCriteria: React.FC = () => {
                     onClick={() => {
                       setShowAttachmentModal(false);
                       setSelectedCriteria(null);
+                      setSelectedItemId(null);
                       setUploadNotes('');
                     }}
                     className="text-gray-400 hover:text-gray-600"
@@ -408,7 +416,7 @@ const ComplianceCriteria: React.FC = () => {
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
-                        handleFileUpload(selectedCriteria.id, file);
+                        handleFileUpload(selectedCriteria.id, selectedItemId, file);
                       }
                     }}
                     accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png"
@@ -431,12 +439,37 @@ const ComplianceCriteria: React.FC = () => {
                     onClick={() => {
                       setShowAttachmentModal(false);
                       setSelectedCriteria(null);
+                      setSelectedItemId(null);
                       setUploadNotes('');
                     }}
                   >
                     キャンセル
                   </Button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PDFプレビューモーダル */}
+        {previewUrl && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg w-full h-full max-w-6xl max-h-[90vh] flex flex-col">
+              <div className="p-4 border-b flex justify-between items-center">
+                <h2 className="text-xl font-bold text-gray-900">資料プレビュー</h2>
+                <button
+                  onClick={() => setPreviewUrl(null)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <span className="material-icons">close</span>
+                </button>
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <iframe
+                  src={previewUrl}
+                  className="w-full h-full"
+                  title="資料プレビュー"
+                />
               </div>
             </div>
           </div>
