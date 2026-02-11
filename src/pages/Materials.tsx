@@ -7,6 +7,7 @@ import Layout from '../components/layout/Layout';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
+import type { UserProfile, Organization } from '../types';
 
 interface Material {
   id: string;
@@ -20,16 +21,24 @@ interface Material {
   lastPurchaseDate: string;
   costPerUnit: number;
   notes: string;
+  userId?: string;
+}
+
+interface MaterialWithOwner extends Material {
+  ownerName?: string;
+  organizationName?: string;
 }
 
 export default function Materials() {
-  const { currentUser, getAccessibleUserIds } = useAuth();
+  const { currentUser, getAccessibleUserIds, isAdmin } = useAuth();
   const navigate = useNavigate();
-  const [materials, setMaterials] = useState<Material[]>([]);
+  const [materials, setMaterials] = useState<MaterialWithOwner[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('すべて');
+  const [filterOrganization, setFilterOrganization] = useState<string>('すべて');
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     type: '肥料' as '肥料' | '農薬' | '種子' | 'その他',
@@ -81,7 +90,32 @@ export default function Materials() {
         ...doc.data()
       } as Material));
 
-      setMaterials(materialsData);
+      // ユーザー情報と組織情報を取得
+      const usersSnapshot = await getDocs(collection(db, 'users'));
+      const usersMap = new Map<string, UserProfile>();
+      usersSnapshot.docs.forEach(doc => {
+        usersMap.set(doc.id, doc.data() as UserProfile);
+      });
+
+      const orgsSnapshot = await getDocs(collection(db, 'organizations'));
+      const orgsMap = new Map<string, Organization>();
+      orgsSnapshot.docs.forEach(doc => {
+        orgsMap.set(doc.id, { id: doc.id, ...doc.data() } as Organization);
+      });
+      setOrganizations(Array.from(orgsMap.values()));
+
+      // 資材データに所有者情報を追加
+      const materialsWithOwner: MaterialWithOwner[] = materialsData.map(material => {
+        const user = material.userId ? usersMap.get(material.userId) : null;
+        const org = user?.organizationId ? orgsMap.get(user.organizationId) : null;
+        return {
+          ...material,
+          ownerName: user?.displayName || user?.email?.split('@')[0] || '不明',
+          organizationName: org?.name || '未所属'
+        };
+      });
+
+      setMaterials(materialsWithOwner);
     } catch (error) {
       console.error('資材読み込みエラー:', error);
       setError('資材の読み込みに失敗しました');
@@ -156,12 +190,14 @@ export default function Materials() {
                          material.supplier.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          material.storageLocation.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'すべて' || material.type === filterType;
-    return matchesSearch && matchesType;
+    const matchesOrganization = filterOrganization === 'すべて' || material.organizationName === filterOrganization;
+    return matchesSearch && matchesType && matchesOrganization;
   });
 
   const handleClearFilters = () => {
     setSearchTerm('');
     setFilterType('すべて');
+    setFilterOrganization('すべて');
   };
 
   const getStockStatus = (quantity: number, minimumStock: number) => {
@@ -205,7 +241,7 @@ export default function Materials() {
 
         {/* 検索・フィルター */}
         <Card title="検索・フィルター">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Input
               label="資材名・仕入先・保管場所で検索"
               value={searchTerm}
@@ -228,6 +264,27 @@ export default function Materials() {
                 <option value="その他">その他</option>
               </select>
             </div>
+
+            {isAdmin() && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  組織
+                </label>
+                <select
+                  value={filterOrganization}
+                  onChange={(e) => setFilterOrganization(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="すべて">すべて</option>
+                  <option value="未所属">未所属</option>
+                  {organizations.map((org) => (
+                    <option key={org.id} value={org.name}>
+                      {org.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           <div className="mt-4">
@@ -273,6 +330,11 @@ export default function Materials() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       保管場所
                     </th>
+                    {isAdmin() && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        所有者
+                      </th>
+                    )}
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       仕入先
                     </th>
@@ -316,6 +378,14 @@ export default function Materials() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {material.storageLocation || '未設定'}
                         </td>
+                        {isAdmin() && (
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div>
+                              <div className="font-medium text-gray-900">{material.ownerName}</div>
+                              <div className="text-xs text-gray-500">{material.organizationName}</div>
+                            </div>
+                          </td>
+                        )}
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {material.supplier}
                         </td>
