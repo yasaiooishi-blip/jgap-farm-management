@@ -109,3 +109,28 @@ export interface WorkRecordInput {
   quantity?: number;
   unit?: string;
 }
+
+// JGAP管理点と適合基準の型定義
+export interface JGAPCriteria {
+  id: string;
+  sectionNumber: string; // セクション番号（例: "1", "2.1", "2.2"）
+  sectionTitle: string; // セクション名（例: "農場の見える化"）
+  managementPoint: string; // 管理点番号（例: "1.1"）
+  description: string; // 管理点の内容
+  criteriaLevel: '必須' | '重要' | '推奨'; // 適合基準レベル
+  criteriaContent: string; // 適合基準の内容
+  order: number; // 表示順序
+}
+
+// JGAP資料添付の型定義
+export interface JGAPAttachment {
+  id: string;
+  userId: string;
+  organizationId?: string;
+  criteriaId: string; // 対応する管理点のID
+  fileName: string;
+  fileUrl: string;
+  fileType: string; // PDFやExcelなどのMIMEタイプ
+  uploadedAt: Date;
+  notes?: string; // メモ
+}

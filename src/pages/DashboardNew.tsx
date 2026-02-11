@@ -133,6 +133,14 @@ export default function DashboardNew() {
       color: 'bg-orange-500',
       hoverColor: 'hover:bg-orange-600',
       path: '/reports'
+    },
+    {
+      icon: 'fact_check',
+      label: '管理点と適合基準',
+      description: 'JGAP審査資料管理',
+      color: 'bg-indigo-500',
+      hoverColor: 'hover:bg-indigo-600',
+      path: '/compliance-criteria'
     }
   ];
 

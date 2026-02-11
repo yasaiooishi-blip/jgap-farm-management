@@ -13,6 +13,7 @@ import Shipments from './pages/Shipments';
 import AddShipment from './pages/AddShipment';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
+import ComplianceCriteria from './pages/ComplianceCriteria';
 // 管理者用ページ
 import AdminDashboard from './pages/admin/AdminDashboard';
 import OrganizationManagement from './pages/admin/OrganizationManagement';
@@ -112,6 +113,15 @@ function App() {
             element={
               <PrivateRoute>
                 <AddShipment />
+              </PrivateRoute>
+            }
+          />
+          
+          <Route
+            path="/compliance-criteria"
+            element={
+              <PrivateRoute>
+                <ComplianceCriteria />
               </PrivateRoute>
             }
           />
