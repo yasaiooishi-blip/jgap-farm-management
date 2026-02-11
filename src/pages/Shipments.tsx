@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, getDocs, query, where, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, query, where, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/layout/Layout';
@@ -8,14 +8,33 @@ import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Select from '../components/common/Select';
-import type { Shipment } from '../types';
+import Textarea from '../components/common/Textarea';
+import type { Shipment, Field } from '../types';
 
 export default function Shipments() {
   const { currentUser, getAccessibleUserIds, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [shipments, setShipments] = useState<Shipment[]>([]);
+  const [fields, setFields] = useState<Field[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingShipment, setEditingShipment] = useState<Shipment | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    shipmentDate: '',
+    destination: '',
+    fieldId: '',
+    crop: '',
+    variety: '',
+    grade: '優' as Shipment['grade'],
+    size: 'M' as Shipment['size'],
+    quantity: '',
+    unit: 'kg',
+    unitPrice: '',
+    worker: '',
+    notes: ''
+  });
   const [filters, setFilters] = useState({
     startDate: '',
     endDate: '',
@@ -27,8 +46,26 @@ export default function Shipments() {
   useEffect(() => {
     if (currentUser) {
       loadShipments();
+      loadFields();
     }
   }, [currentUser]);
+
+  async function loadFields() {
+    try {
+      const q = query(
+        collection(db, 'fields'),
+        where('userId', '==', currentUser?.uid)
+      );
+      const snapshot = await getDocs(q);
+      const fieldsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Field[];
+      setFields(fieldsData);
+    } catch (error: any) {
+      console.error('圃場の読み込みエラー:', error);
+    }
+  }
 
   async function loadShipments() {
     try {
@@ -85,6 +122,108 @@ export default function Shipments() {
       console.error('削除エラー:', error);
       alert('削除に失敗しました: ' + (error?.message || '不明なエラー'));
     }
+  }
+
+  function handleEdit(shipment: Shipment) {
+    setEditingShipment(shipment);
+    setFormData({
+      shipmentDate: shipment.shipmentDate,
+      destination: shipment.destination,
+      fieldId: shipment.fieldId || '',
+      crop: shipment.crop,
+      variety: shipment.variety || '',
+      grade: shipment.grade,
+      size: shipment.size || 'M',
+      quantity: shipment.quantity.toString(),
+      unit: shipment.unit,
+      unitPrice: shipment.unitPrice?.toString() || '',
+      worker: shipment.worker,
+      notes: shipment.notes || ''
+    });
+    setShowEditModal(true);
+  }
+
+  function handleCancelEdit() {
+    setShowEditModal(false);
+    setEditingShipment(null);
+    setFormData({
+      shipmentDate: '',
+      destination: '',
+      fieldId: '',
+      crop: '',
+      variety: '',
+      grade: '優',
+      size: 'M',
+      quantity: '',
+      unit: 'kg',
+      unitPrice: '',
+      worker: '',
+      notes: ''
+    });
+  }
+
+  async function handleSaveEdit() {
+    if (!editingShipment) return;
+
+    if (!formData.shipmentDate || !formData.destination || !formData.crop || !formData.quantity || !formData.worker) {
+      setError('すべての必須項目を入力してください');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError('');
+
+      const selectedField = fields.find(f => f.id === formData.fieldId);
+      const quantity = Number(formData.quantity);
+      const unitPrice = formData.unitPrice ? Number(formData.unitPrice) : null;
+      const totalAmount = unitPrice ? quantity * unitPrice : null;
+
+      await updateDoc(doc(db, 'shipments', editingShipment.id), {
+        shipmentDate: formData.shipmentDate,
+        destination: formData.destination,
+        fieldId: formData.fieldId || null,
+        fieldName: selectedField?.name || null,
+        crop: formData.crop,
+        variety: formData.variety || null,
+        grade: formData.grade,
+        size: formData.size || null,
+        quantity: quantity,
+        unit: formData.unit,
+        unitPrice: unitPrice,
+        totalAmount: totalAmount,
+        worker: formData.worker,
+        notes: formData.notes || null
+      });
+
+      handleCancelEdit();
+      loadShipments();
+    } catch (error: any) {
+      console.error('更新エラー:', error);
+      setError('更新に失敗しました: ' + (error?.message || '不明なエラー'));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // 圃場選択時に作物名を自動入力
+  function handleFieldChange(fieldId: string) {
+    const selectedField = fields.find(f => f.id === fieldId);
+    setFormData({
+      ...formData,
+      fieldId,
+      crop: selectedField?.crop || formData.crop
+    });
+  }
+
+  // 金額を自動計算
+  function calculateTotalAmount(): number {
+    const quantity = Number(formData.quantity);
+    const unitPrice = Number(formData.unitPrice);
+    if (quantity && unitPrice) {
+      return quantity * unitPrice;
+    }
+    return 0;
   }
 
   function handleClearFilters() {
@@ -322,6 +461,12 @@ export default function Shipments() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
+                          onClick={() => handleEdit(shipment)}
+                          className="text-blue-600 hover:text-blue-900 mr-4"
+                        >
+                          <span className="material-icons text-sm">edit</span>
+                        </button>
+                        <button
                           onClick={() => handleDelete(shipment.id)}
                           className="text-red-600 hover:text-red-900"
                         >
@@ -335,6 +480,203 @@ export default function Shipments() {
             </div>
           )}
         </Card>
+
+        {/* 編集モーダル */}
+        {showEditModal && editingShipment && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold text-gray-900">出荷記録編集</h2>
+                  <button
+                    onClick={handleCancelEdit}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <span className="material-icons">close</span>
+                  </button>
+                </div>
+
+                {error && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
+                    {error}
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  {/* 基本情報 */}
+                  <div className="border-l-4 border-blue-500 bg-blue-50 p-4 rounded space-y-4">
+                    <h3 className="font-semibold text-gray-900 flex items-center">
+                      <span className="material-icons text-blue-600 mr-2 text-sm">info</span>
+                      基本情報
+                    </h3>
+
+                    <Input
+                      label="出荷日"
+                      type="date"
+                      required
+                      value={formData.shipmentDate}
+                      onChange={(e) => setFormData({ ...formData, shipmentDate: e.target.value })}
+                    />
+
+                    <Input
+                      label="出荷先"
+                      required
+                      value={formData.destination}
+                      onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
+                      placeholder="例: ○○市場、○○スーパー"
+                    />
+
+                    <Select
+                      label="圃場（任意）"
+                      value={formData.fieldId}
+                      onChange={(e) => handleFieldChange(e.target.value)}
+                    >
+                      <option value="">選択してください</option>
+                      {fields.map(field => (
+                        <option key={field.id} value={field.id}>
+                          {field.name} ({field.crop})
+                        </option>
+                      ))}
+                    </Select>
+
+                    <Input
+                      label="担当者"
+                      required
+                      value={formData.worker}
+                      onChange={(e) => setFormData({ ...formData, worker: e.target.value })}
+                      placeholder="例: 田中太郎"
+                    />
+                  </div>
+
+                  {/* 商品情報 */}
+                  <div className="border-l-4 border-green-500 bg-green-50 p-4 rounded space-y-4">
+                    <h3 className="font-semibold text-gray-900 flex items-center">
+                      <span className="material-icons text-green-600 mr-2 text-sm">inventory</span>
+                      商品情報
+                    </h3>
+
+                    <Input
+                      label="作物名"
+                      required
+                      value={formData.crop}
+                      onChange={(e) => setFormData({ ...formData, crop: e.target.value })}
+                      placeholder="例: トマト"
+                    />
+
+                    <Input
+                      label="品種"
+                      value={formData.variety}
+                      onChange={(e) => setFormData({ ...formData, variety: e.target.value })}
+                      placeholder="例: 桃太郎"
+                    />
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <Select
+                        label="等級"
+                        required
+                        value={formData.grade}
+                        onChange={(e) => setFormData({ ...formData, grade: e.target.value as Shipment['grade'] })}
+                      >
+                        <option value="秀">秀</option>
+                        <option value="優">優</option>
+                        <option value="良">良</option>
+                        <option value="規格外">規格外</option>
+                        <option value="その他">その他</option>
+                      </Select>
+
+                      <Select
+                        label="サイズ"
+                        value={formData.size}
+                        onChange={(e) => setFormData({ ...formData, size: e.target.value as Shipment['size'] })}
+                      >
+                        <option value="3L">3L</option>
+                        <option value="2L">2L</option>
+                        <option value="L">L</option>
+                        <option value="M">M</option>
+                        <option value="S">S</option>
+                        <option value="その他">その他</option>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* 数量・金額情報 */}
+                  <div className="border-l-4 border-purple-500 bg-purple-50 p-4 rounded space-y-4">
+                    <h3 className="font-semibold text-gray-900 flex items-center">
+                      <span className="material-icons text-purple-600 mr-2 text-sm">monetization_on</span>
+                      数量・金額
+                    </h3>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <Input
+                        label="出荷量"
+                        type="number"
+                        step="0.1"
+                        required
+                        value={formData.quantity}
+                        onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                        placeholder="100"
+                      />
+
+                      <Input
+                        label="単位"
+                        required
+                        value={formData.unit}
+                        onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                        placeholder="kg, 箱, ケースなど"
+                      />
+                    </div>
+
+                    <Input
+                      label="単価（円）"
+                      type="number"
+                      step="0.01"
+                      value={formData.unitPrice}
+                      onChange={(e) => setFormData({ ...formData, unitPrice: e.target.value })}
+                      placeholder="500"
+                    />
+
+                    {formData.quantity && formData.unitPrice && (
+                      <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-gray-700">合計金額</span>
+                          <span className="text-lg font-bold text-blue-600">
+                            ¥{calculateTotalAmount().toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 備考 */}
+                  <Textarea
+                    label="備考"
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    placeholder="出荷に関する特記事項など"
+                    rows={3}
+                  />
+
+                  <div className="flex space-x-3 pt-4">
+                    <Button
+                      onClick={handleSaveEdit}
+                      disabled={saving}
+                      className="flex-1"
+                    >
+                      {saving ? '保存中...' : '保存'}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      onClick={handleCancelEdit}
+                      className="flex-1"
+                    >
+                      キャンセル
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   );
