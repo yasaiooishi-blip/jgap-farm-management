@@ -205,11 +205,17 @@ npm install
 ```
 
 ### Firebase設定
+
+**詳細なセットアップ手順は [FIREBASE_SETUP.md](./FIREBASE_SETUP.md) を参照してください。**
+
+#### 簡易セットアップ手順
+
 1. Firebase Consoleでプロジェクトを作成: https://console.firebase.google.com/
 2. Authentication > Sign-in method でメール/パスワードを有効化
-3. Firestore Database を作成（テストモードで開始）
-4. プロジェクト設定から設定値を取得
-5. `src/config/firebase.ts` の設定値を更新、または `.env.local` に以下を記入:
+3. Firestore Database を作成（本番環境モードで開始）
+4. Firebase Storage を有効化
+5. プロジェクト設定から設定値を取得
+6. `src/config/firebase.ts` の設定値を更新、または `.env.local` に以下を記入:
 
 ```env
 VITE_FIREBASE_API_KEY=your_api_key
@@ -220,35 +226,29 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
 ```
 
+7. Firestore と Storage のセキュリティルールを設定（詳細は FIREBASE_SETUP.md 参照）
+
 ### Firestoreセキュリティルールの設定
 Firebase Console > Firestore Database > ルール で以下を設定:
 
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    function isSignedIn() {
-      return request.auth != null;
-    }
-    
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-    
-    match /fields/{fieldId} {
-      allow read, write: if isOwner(resource.data.userId);
-      allow create: if isSignedIn() && 
-        request.resource.data.userId == request.auth.uid;
-    }
-    
-    match /workRecords/{recordId} {
-      allow read, write: if isOwner(resource.data.userId);
-      allow create: if isSignedIn() && 
-        request.resource.data.userId == request.auth.uid;
-    }
-  }
-}
+プロジェクトルートに`firestore.rules`ファイルがあります。このファイルをFirebase Consoleにコピーしてください。
+
+または、Firebase CLIでデプロイ:
+```bash
+firebase deploy --only firestore:rules
 ```
+
+### Firebase Storageセキュリティルールの設定
+Firebase Console > Storage > ルール で以下を設定:
+
+プロジェクトルートに`storage.rules`ファイルがあります。このファイルをFirebase Consoleにコピーしてください。
+
+または、Firebase CLIでデプロイ:
+```bash
+firebase deploy --only storage:rules
+```
+
+**重要**: JGAP添付資料のアップロード機能を使用するには、Firebase Storageのルールが正しく設定されている必要があります。
 
 ### 開発サーバーの起動
 ```bash
